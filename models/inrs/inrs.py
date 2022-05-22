@@ -21,8 +21,20 @@ from models.inrs.modules import (
     MultiModalINRSharedLinear,
     INRSVDLinear,
 )
-from src.utils.training_utils import generate_coords
 
+
+def generate_coords(batch_size: int, width: int, height: int) -> Tensor:
+    row = torch.arange(0, height).float() / height
+    col = torch.arange(0, width).float() / width
+    x_coords = row.view(1, -1).repeat(width, 1)
+    y_coords = col.view(1, -1).repeat(height, 1)
+    y_coords = y_coords.t()
+
+    coords = torch.stack([x_coords, y_coords], dim=2) # [width, height, 2]
+    coords = coords.view(-1, 2) # [width * height, 2]
+    coords = coords.t().view(1, 2, width * height).repeat(batch_size, 1, 1) # [batch_size, 2, n_coords]
+
+    return coords
 
 class INRs(nn.Module):
     def __init__(self, config: Config):
@@ -38,16 +50,16 @@ class INRs(nn.Module):
         raise NotImplementedError("It is a base class. Implement in `.init_model()` in your child class.")
 
     @torch.no_grad()
-    def generate_input_coords(self, batch_size: int, img_size: int) -> Tensor:
+    def generate_input_coords(self, batch_size: int, width: int, height: int) -> Tensor:
         """
         @param batch_size
         @return coords # [batch_size, coord_dim, n_coords]
         """
-        coords = generate_coords(batch_size, img_size)
+        coords = generate_coords(batch_size, width, height)
         return coords
 
-    def generate_image(self, inrs_weights: Tensor, img_size: int, return_activations: bool=False) -> Tensor:
-        coords = self.generate_input_coords(len(inrs_weights), img_size).to(inrs_weights.device)
+    def generate_image(self, inrs_weights: Tensor, width: int, height: int, return_activations: bool=False) -> Tensor:
+        coords = self.generate_input_coords(len(inrs_weights), width, height).to(inrs_weights.device)
 
         if return_activations:
             images_raw, activations = self.forward(coords, inrs_weights, return_activations=True) # [batch_size, num_channels, num_coords]
@@ -55,7 +67,7 @@ class INRs(nn.Module):
             images_raw = self.forward(coords, inrs_weights) # [batch_size, num_channels, num_coords]
 
         num_img_channels = 1
-        images = images_raw.view(len(inrs_weights), num_img_channels, img_size, img_size) # [batch_size, num_channels, img_size, img_size]
+        images = images_raw.view(len(inrs_weights), num_img_channels, width, height) # [batch_size, num_channels, img_size, img_size]
 
         return (images, activations) if return_activations else images
 

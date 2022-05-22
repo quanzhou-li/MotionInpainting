@@ -11,6 +11,44 @@ from models.layers import create_activation
 from utils.training_utils import sample_noise
 
 
+class ResBlock(nn.Module):
+
+    def __init__(self,
+                 Fin,
+                 Fout,
+                 n_neurons=512):
+        super(ResBlock, self).__init__()
+        # Feature dimension of input and output
+        self.Fin = Fin
+        self.Fout = Fout
+
+        self.fc1 = nn.Linear(Fin, n_neurons)
+        self.bn1 = nn.BatchNorm1d(n_neurons)
+
+        self.fc2 = nn.Linear(n_neurons, Fout)
+        self.bn2 = nn.BatchNorm1d(Fout)
+
+        if Fin != Fout:
+            self.fc3 = nn.Linear(Fin, Fout)
+
+        self.ll = nn.LeakyReLU(negative_slope=0.2)
+
+    def forward(self, x, final_nl=True):
+        Xin = x if self.Fin == self.Fout else self.ll(self.fc3(x))
+
+        Xout = self.fc1(x)
+        Xout = self.bn1(Xout)
+        Xout = self.ll(Xout)
+
+        Xout = self.fc2(Xout)
+        Xout = self.bn2(Xout)
+        Xout = Xin + Xout
+
+        if final_nl:
+            return self.ll(Xout)
+        return Xout
+
+
 class INRGenerator(nn.Module):
     def __init__(self, config: Config):
         super().__init__()
@@ -21,10 +59,17 @@ class INRGenerator(nn.Module):
         self.class_embedder = None
         self.config = config
         self.inr = FourierINRs(self.config)
+
+        self.frame_D = 338
+        self.latent_D = 256
+        self.fframe_enc = ResBlock(self.frame_D, self.latent_D)
+        self.lframe_enc = ResBlock(self.frame_D, self.latent_D)
+
         self.init_model()
 
     def init_model(self):
-        input_dim = 512
+        dim_z = 64
+        input_dim = self.latent_D * 2 + dim_z
         self.class_embedder = nn.Identity()
         self.size_sampler = nn.Identity()
 
@@ -41,17 +86,18 @@ class INRGenerator(nn.Module):
 
         self.connector.bias.data.mul_(np.sqrt(1 / dims[1]))
 
-    def forward(self, z: Tensor, img_size: int = None) -> Tensor:
-        img_size = 256 if img_size is None else img_size
-        inrs_weights = self.compute_model_forward(z)
+    def forward(self, z: Tensor, first_frame: Tensor, last_frame: Tensor, width: int, height: int) -> Tensor:
+        feat_fframe = self.fframe_enc(first_frame)
+        feat_lframe = self.lframe_enc(last_frame)
+        feat = torch.cat([z, feat_fframe, feat_lframe], dim=1)
+        inrs_weights = self.compute_model_forward(feat)
 
-        return self.forward_for_weights(inrs_weights, img_size)
+        return self.forward_for_weights(inrs_weights, width, height)
 
-    def forward_for_weights(self, inrs_weights: Tensor, img_size: int = None,
+    def forward_for_weights(self, inrs_weights: Tensor, width: int, height: int,
                             return_activations: bool = False) -> Tensor:
-        img_size = 256 if img_size is None else img_size
         generation_result = self.inr.generate_image(
-            inrs_weights, img_size, return_activations=return_activations)
+            inrs_weights, width, height, return_activations=return_activations)
 
         images = generation_result
         return images
@@ -68,18 +114,17 @@ class INRGenerator(nn.Module):
     def sample_noise(self, batch_size: int, correction: Config = None) -> Tensor:
         return sample_noise(self.config.hp.generator.dist, self.config.hp.generator.z_dim, batch_size, correction)
 
-    def generate_image(self, batch_size: int, device: str, return_activations: bool = False,
+    def generate_image(self, batch_size: int, device: str, width: int, height: int, return_activations: bool = False,
                        return_labels: bool = False) -> Tensor:
         """
         Generates an INR and computes it
         """
         inputs = self.sample_noise(batch_size).to(device)  # [batch_size, z_dim]
-        aspect_ratios = None  # In case of variable-sized generation
         inr_params = self.compute_model_forward(inputs)
 
         # Generating the images
         generation_result = self.forward_for_weights(
-            inr_params, aspect_ratios=aspect_ratios, return_activations=return_activations)
+            inr_params, width, height, return_activations=return_activations)
 
         images = generation_result
         return images
