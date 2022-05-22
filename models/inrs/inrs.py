@@ -128,21 +128,18 @@ class FourierINRs(INRs):
         super().__init__(config)
 
     def init_model(self):
-        layer_sizes = [32, 32, 32]
+        layer_sizes = [256, 256, 256]
         layers = self.create_transform(
             2,
-            len(layer_sizes) // 2,
+            layer_sizes[0],
             layer_type='linear',
             is_coord_layer=True)
-        layers.append(INRProxy(create_activation('sines_cosines')))
+        layers.append(INRProxy(create_activation('sine')))
 
         hid_layers = []
 
         for i in range(len(layer_sizes) - 1):
-            if i > 0:
-                input_dim = layer_sizes[i] + layer_sizes[0]
-            else:
-                input_dim = layer_sizes[i]
+            input_dim = layer_sizes[i]
 
             curr_transform_layers = self.create_transform(
                 input_dim,

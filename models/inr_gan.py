@@ -41,17 +41,17 @@ class INRGenerator(nn.Module):
 
         self.connector.bias.data.mul_(np.sqrt(1 / dims[1]))
 
-    def forward(self, z: Tensor, img_size: int = None, aspect_ratios: List[float] = None) -> Tensor:
+    def forward(self, z: Tensor, img_size: int = None) -> Tensor:
         img_size = 256 if img_size is None else img_size
         inrs_weights = self.compute_model_forward(z)
 
-        return self.forward_for_weights(inrs_weights, img_size, aspect_ratios)
+        return self.forward_for_weights(inrs_weights, img_size)
 
-    def forward_for_weights(self, inrs_weights: Tensor, img_size: int = None, aspect_ratios: List[float] = None,
+    def forward_for_weights(self, inrs_weights: Tensor, img_size: int = None,
                             return_activations: bool = False) -> Tensor:
         img_size = 256 if img_size is None else img_size
         generation_result = self.inr.generate_image(
-            inrs_weights, img_size, aspect_ratios=aspect_ratios, return_activations=return_activations)
+            inrs_weights, img_size, return_activations=return_activations)
 
         images = generation_result
         return images
