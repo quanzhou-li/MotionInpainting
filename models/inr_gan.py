@@ -6,9 +6,9 @@ import torch.nn as nn
 from torch import Tensor
 from firelab.config import Config
 
-from src.models.inrs import FourierINRs
-from src.models.layers import create_activation
-from src.utils.training_utils import sample_noise
+from models.inrs import FourierINRs
+from models.layers import create_activation
+from utils.training_utils import sample_noise
 
 
 class INRGenerator(nn.Module):
