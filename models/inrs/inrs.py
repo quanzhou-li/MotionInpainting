@@ -4,8 +4,8 @@ import torch.nn as nn
 from torch import Tensor
 from firelab.config import Config
 
-from src.models.layers import create_activation
-from src.models.inrs.modules import (
+from models.layers import create_activation
+from models.inrs.modules import (
     INRProxy,
     INRLinear,
     INRSELinear,
@@ -126,7 +126,6 @@ class INRs(nn.Module):
 class FourierINRs(INRs):
     def __init__(self, config: Config):
         super().__init__(config)
-        self.model = None
 
     def init_model(self):
         layer_sizes = [32, 32, 32]
