@@ -67,7 +67,7 @@ class INRs(nn.Module):
             images_raw = self.forward(coords, inrs_weights) # [batch_size, num_channels, num_coords]
 
         num_img_channels = 1
-        images = images_raw.view(len(inrs_weights), num_img_channels, width, height) # [batch_size, num_channels, img_size, img_size]
+        images = images_raw.view(len(inrs_weights), num_img_channels, height, width) # [batch_size, num_channels, img_size, img_size]
 
         return (images, activations) if return_activations else images
 
