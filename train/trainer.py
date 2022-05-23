@@ -88,7 +88,7 @@ class Trainer:
             fframes = data['motion_imgs'][:, :, 0]
             lframes = data['motion_imgs'][:, :, -1]
             drec_inr = self.inr(z_s, fframes, lframes, width, height)
-            loss_total_inr, cur_loss_dict_inr = self.loss_inr(data['motion_imgs'], drec_inr.view(bs, width, height))
+            loss_total_inr, cur_loss_dict_inr = self.loss_inr(data['motion_imgs'], drec_inr.view(bs, height, width))
 
             loss_total_inr.backward()
             self.optimizer_inr.step()
