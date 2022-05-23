@@ -138,7 +138,7 @@ class Trainer:
         return eval_loss_dict_inr
 
     def loss_inr(self, data, drec):
-        loss_reconstruction = 100 * self.LossL2(data, drec)
+        loss_reconstruction = 100 * self.LossL1(data, drec)
 
         loss_dict = {
             'loss_reconstruction': loss_reconstruction,
