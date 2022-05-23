@@ -84,7 +84,7 @@ class Trainer:
                 loc=torch.tensor(np.zeros([bs, 64]), requires_grad=False),
                 scale=torch.tensor(np.ones([bs, 64]), requires_grad=False)
             )
-            z_s = dist.rsample().float()
+            z_s = dist.rsample().float().to(self.device)
             fframes = data['motion_imgs'][:, :, 0]
             lframes = data['motion_imgs'][:, :, -1]
             drec_inr = self.inr(z_s, fframes, lframes, width, height)
@@ -125,7 +125,7 @@ class Trainer:
                     loc=torch.tensor(np.zeros([bs, 64]), requires_grad=False),
                     scale=torch.tensor(np.ones([bs, 64]), requires_grad=False)
                 )
-                z_s = dist.rsample().float()
+                z_s = dist.rsample().float().to(self.device)
                 fframes = data['motion_imgs'][:, :, 0]
                 lframes = data['motion_imgs'][:, :, -1]
                 drec_inr = self.inr(z_s, fframes, lframes, width, height)
