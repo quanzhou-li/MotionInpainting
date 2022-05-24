@@ -134,7 +134,7 @@ if __name__ == '__main__':
                         help='Path to the trained model')
     parser.add_argument('--data-path', type=str,
                         help='Path to the data to be tested')
-    parser.add_argument('--renderings', default='renderings_pose_motion_infill', type=str,
+    parser.add_argument('--renderings', default='renderings_motion_imgs', type=str,
                         help='Path to the directory saving the renderings')
     parser.add_argument('--ds-name', default='train_data', type=str,
                         help='File name of the dataset')
