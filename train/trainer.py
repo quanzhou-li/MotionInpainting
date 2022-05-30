@@ -116,14 +116,9 @@ class Trainer:
             for it, data in enumerate(dataset):
                 data = {k: data[k].to(self.device) for k in data.keys()}
                 bs, height, width = data['motion_imgs'].shape
-                dist = torch.distributions.normal.Normal(
-                    loc=torch.tensor(np.zeros([bs, 512]), requires_grad=False),
-                    scale=torch.tensor(np.ones([bs, 512]), requires_grad=False)
-                )
-                z_s = dist.rsample().float().to(self.device)
                 fframes = data['motion_imgs'][:, :, 0]
                 lframes = data['motion_imgs'][:, :, -1]
-                drec_inr = self.inr.decode(z_s, fframes, lframes, width, height)
+                drec_inr = self.inr(data['motion_imgs'], fframes, lframes, width, height)
                 loss_total_inr, cur_loss_dict_inr = self.loss_inr(data, drec_inr)
                 eval_loss_dict_inr = {k: eval_loss_dict_inr.get(k, 0.0) + v.item() for k, v in
                                              cur_loss_dict_inr.items()}
