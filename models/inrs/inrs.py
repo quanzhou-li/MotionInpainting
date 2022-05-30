@@ -169,7 +169,7 @@ class FourierINRs(INRs):
         '''
 
         for i in range(len(layer_sizes)-1):
-            layers.extend([INRLinear(layer_sizes[i], layer_sizes[i+1])])
+            layers.extend(self.create_transform(layer_sizes[i], layer_sizes[i+1], 'linear'))
             layers.append(INRProxy(create_activation('sine')))
 
         layers.extend(self.create_transform(layer_sizes[-1], 1, 'linear'))
