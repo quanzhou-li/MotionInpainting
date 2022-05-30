@@ -134,7 +134,7 @@ class INRGenerator(nn.Module):
 
 class INRGeneratorBlock(nn.Module):
     def __init__(self, in_features: int, out_features: int, residual: bool, is_first_layer: bool,
-                 main_branch_weight: float = 0.1):
+                 main_branch_weight: float = 0.9):
         super().__init__()
 
         layers = [nn.Linear(in_features, out_features)]
