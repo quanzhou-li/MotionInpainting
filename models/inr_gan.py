@@ -3,6 +3,7 @@ from typing import List, Dict, Union, Any
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.nn import functional as F
 from torch import Tensor
 from firelab.config import Config
 
@@ -97,7 +98,7 @@ class INRGenerator(nn.Module):
         feat_lframe = self.lframe_enc(last_frame)
         bs = img.shape[0]
         feat_img = self.img_enc(img.view(bs, self.width * self.height))
-        dist = torch.distributions.normal.Normal(self.enc_mu(feat_img), self.enc_var(feat_img))
+        dist = torch.distributions.normal.Normal(self.enc_mu(feat_img), F.softplus(self.enc_var(feat_img)))
 
         z = dist.rsample()
         feat = torch.cat([z, feat_fframe, feat_lframe], dim=1)
