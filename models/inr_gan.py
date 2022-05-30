@@ -109,13 +109,13 @@ class INRGenerator(nn.Module):
 
         return results
 
-    def decode(self, z: Tensor, first_frame: Tensor, last_frame: Tensor, width: int, height: int) -> Tensor:
+    def decode(self, z: Tensor, first_frame: Tensor, last_frame: Tensor, width: int, height: int) -> Dict[str, Tensor]:
         feat_fframe = self.fframe_enc(first_frame)
         feat_lframe = self.lframe_enc(last_frame)
         feat = torch.cat([z, feat_fframe, feat_lframe], dim=1)
         inrs_weights = self.compute_model_forward(feat)
 
-        return self.forward_for_weights(inrs_weights, width, height)
+        return {'imgs': self.forward_for_weights(inrs_weights, width, height)}
 
     def forward_for_weights(self, inrs_weights: Tensor, width: int, height: int,
                             return_activations: bool = False) -> Tensor:
