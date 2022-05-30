@@ -146,8 +146,8 @@ class FourierINRs(INRs):
             layer_sizes[0],
             layer_type='linear',
             is_coord_layer=True,
-            weight_std=1.0,
-            bias_std=1.0
+            # weight_std=1.0,
+            # bias_std=1.0
         )
         layers.append(INRProxy(create_activation('sine')))
 
