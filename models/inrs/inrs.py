@@ -146,8 +146,8 @@ class FourierINRs(INRs):
             layer_sizes[0],
             layer_type='linear',
             is_coord_layer=True,
-            weight_std=1.0,
-            bias_std=1.0
+            # weight_std=1.0,
+            # bias_std=1.0
         )
         layers.append(INRProxy(create_activation('sine')))
 
@@ -167,7 +167,7 @@ class FourierINRs(INRs):
         layers.append(INRInputSkip(*hid_layers))
 
         layers.extend(self.create_transform(layer_sizes[-1], 1, 'linear'))
-        layers.append(INRProxy(create_activation('relu')))
+        layers.append(INRProxy(create_activation('none')))
 
         self.model = nn.Sequential(*layers)
 
