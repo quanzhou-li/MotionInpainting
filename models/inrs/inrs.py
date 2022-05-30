@@ -140,7 +140,7 @@ class FourierINRs(INRs):
         super().__init__(config)
 
     def init_model(self):
-        layer_sizes = [256, 256, 256, 256, 256]
+        layer_sizes = [64, 128, 256, 128, 64]
         layers = self.create_transform(
             2,
             layer_sizes[0],
@@ -151,6 +151,7 @@ class FourierINRs(INRs):
         )
         layers.append(INRProxy(create_activation('relu')))
 
+        '''
         hid_layers = []
 
         for i in range(len(layer_sizes) - 1):
@@ -165,6 +166,11 @@ class FourierINRs(INRs):
             hid_layers.append(INRResidual(INRSequential(*curr_transform_layers)))
 
         layers.append(INRInputSkip(*hid_layers))
+        '''
+
+        for i in range(len(layer_sizes)-1):
+            layers.extend(INRFactorizedLinear(layer_sizes[i], layer_sizes[i+1], rank=10))
+            layers.extend(INRProxy(create_activation('sine')))
 
         layers.extend(self.create_transform(layer_sizes[-1], 1, 'linear'))
         layers.append(INRProxy(create_activation('none')))
