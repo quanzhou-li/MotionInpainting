@@ -80,15 +80,10 @@ class Trainer:
             data = {k: data[k].to(self.device) for k in data.keys()}
             self.optimizer_inr.zero_grad()
             bs, height, width = data['motion_imgs'].shape
-            dist = torch.distributions.normal.Normal(
-                loc=torch.tensor(np.zeros([bs, 256]), requires_grad=False),
-                scale=torch.tensor(np.ones([bs, 256]), requires_grad=False)
-            )
-            z_s = dist.rsample().float().to(self.device)
             fframes = data['motion_imgs'][:, :, 0]
             lframes = data['motion_imgs'][:, :, -1]
-            drec_inr = self.inr(z_s, fframes, lframes, width, height)
-            loss_total_inr, cur_loss_dict_inr = self.loss_inr(data['motion_imgs'], drec_inr.view(bs, height, width))
+            drec_inr = self.inr(data['motion_imgs'], fframes, lframes, width, height)
+            loss_total_inr, cur_loss_dict_inr = self.loss_inr(data, drec_inr)
 
             loss_total_inr.backward()
             self.optimizer_inr.step()
@@ -128,8 +123,8 @@ class Trainer:
                 z_s = dist.rsample().float().to(self.device)
                 fframes = data['motion_imgs'][:, :, 0]
                 lframes = data['motion_imgs'][:, :, -1]
-                drec_inr = self.inr(z_s, fframes, lframes, width, height)
-                loss_total_inr, cur_loss_dict_inr = self.loss_inr(data['motion_imgs'], drec_inr.view(bs, height, width))
+                drec_inr = self.inr.decode(z_s, fframes, lframes, width, height)
+                loss_total_inr, cur_loss_dict_inr = self.loss_inr(data, drec_inr)
                 eval_loss_dict_inr = {k: eval_loss_dict_inr.get(k, 0.0) + v.item() for k, v in
                                              cur_loss_dict_inr.items()}
 
@@ -138,10 +133,21 @@ class Trainer:
         return eval_loss_dict_inr
 
     def loss_inr(self, data, drec):
-        loss_reconstruction = 100 * self.LossL2(data, drec)
+        bs, height, width = data['motion_imgs'].shape
+        loss_reconstruction = 100 * self.LossL2(data['motion_imgs'], drec['imgs'].view(bs, height, width))
+
+        q_z = torch.distributions.normal.Normal(drec['mean'], drec['std'])
+        p_z = torch.distributions.normal.Normal(
+            loc=torch.tensor(np.zeros([bs, 512]), requires_grad=False).to(
+                self.device).type(self.dtype),
+            scale=torch.tensor(np.ones([bs, 512]), requires_grad=False).to(
+                self.device).type(self.dtype)
+        )
+        loss_kl = 30 * 0.005 * torch.mean(torch.sum(torch.distributions.kl.kl_divergence(q_z, p_z)))
 
         loss_dict = {
             'loss_reconstruction': loss_reconstruction,
+            'loss_kl': loss_kl,
         }
 
         loss_total = torch.stack(list(loss_dict.values())).sum()

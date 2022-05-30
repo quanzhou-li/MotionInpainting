@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict, Union, Any
 
 import numpy as np
 import torch
@@ -65,10 +65,15 @@ class INRGenerator(nn.Module):
         self.fframe_enc = ResBlock(self.frame_D, self.latent_D)
         self.lframe_enc = ResBlock(self.frame_D, self.latent_D)
 
+        self.width, self.height = 150, 330
+        self.img_enc = ResBlock(self.width * self.height, self.latent_D)
+        self.enc_mu = nn.Linear(self.latent_D, self.latent_D)
+        self.enc_var = nn.Linear(self.latent_D, self.latent_D)
+
         self.init_model()
 
     def init_model(self):
-        dim_z = 256
+        dim_z = self.latent_D
         input_dim = self.latent_D * 2 + dim_z
         self.class_embedder = nn.Identity()
         self.size_sampler = nn.Identity()
@@ -86,7 +91,24 @@ class INRGenerator(nn.Module):
 
         self.connector.bias.data.mul_(np.sqrt(1 / dims[1]))
 
-    def forward(self, z: Tensor, first_frame: Tensor, last_frame: Tensor, width: int, height: int) -> Tensor:
+    def forward(self, img: Tensor, first_frame: Tensor, last_frame: Tensor, width: int, height: int) -> Dict[
+        str, Union[Union[Tensor, float], Any]]:
+        feat_fframe = self.fframe_enc(first_frame)
+        feat_lframe = self.lframe_enc(last_frame)
+        bs = img.shape[0]
+        feat_img = self.img_enc(img.view(bs, self.width * self.height))
+        dist = torch.distributions.normal.Normal(self.enc_mu(feat_img), self.enc_var(feat_img))
+
+        z = dist.rsample()
+        feat = torch.cat([z, feat_fframe, feat_lframe], dim=1)
+        inrs_weights = self.compute_model_forward(feat)
+
+        imgs = self.forward_for_weights(inrs_weights, width, height)
+        results = {'mean': dist.mean, 'std': dist.scale, 'imgs': imgs}
+
+        return results
+
+    def decode(self, z: Tensor, first_frame: Tensor, last_frame: Tensor, width: int, height: int) -> Tensor:
         feat_fframe = self.fframe_enc(first_frame)
         feat_lframe = self.lframe_enc(last_frame)
         feat = torch.cat([z, feat_fframe, feat_lframe], dim=1)
