@@ -80,7 +80,7 @@ class INRGenerator(nn.Module):
         self.size_sampler = nn.Identity()
 
         generator_hid_dim = 2048
-        generator_num_layers = 5
+        generator_num_layers = 10
 
         dims = [input_dim] \
                + [generator_hid_dim] * generator_num_layers \
@@ -88,8 +88,7 @@ class INRGenerator(nn.Module):
 
         self.mapping_network = nn.Sequential(
             *[INRGeneratorBlock(dims[i], dims[i + 1], True, is_first_layer=(i == 0)) for i in range(len(dims) - 2)])
-        self.connector = ResBlock(dims[-2], dims[-1], n_neurons=generator_hid_dim // 2)
-        # self.connector = nn.Linear(dims[-2], dims[-1])
+        self.connector = nn.Linear(dims[-2], dims[-1])
 
     def forward(self, img: Tensor, first_frame: Tensor, last_frame: Tensor, width: int, height: int) -> Dict[
         str, Union[Union[Tensor, float], Any]]:
