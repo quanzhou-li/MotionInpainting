@@ -61,19 +61,19 @@ class INRGenerator(nn.Module):
         self.inr = FourierINRs(self.config)
 
         self.frame_D = 330
-        self.latent_D = 256
+        self.latent_D = 512
         self.fframe_enc = ResBlock(self.frame_D, self.latent_D)
         self.lframe_enc = ResBlock(self.frame_D, self.latent_D)
 
         self.init_model()
 
     def init_model(self):
-        dim_z = 64
+        dim_z = 256
         input_dim = self.latent_D * 2 + dim_z
         self.class_embedder = nn.Identity()
         self.size_sampler = nn.Identity()
 
-        generator_hid_dim = 1024
+        generator_hid_dim = 2048
         generator_num_layers = 5
 
         dims = [input_dim] \
@@ -114,6 +114,7 @@ class INRGenerator(nn.Module):
     def sample_noise(self, batch_size: int, correction: Config = None) -> Tensor:
         return sample_noise(self.config.hp.generator.dist, self.config.hp.generator.z_dim, batch_size, correction)
 
+    '''
     def generate_image(self, batch_size: int, device: str, width: int, height: int, return_activations: bool = False,
                        return_labels: bool = False) -> Tensor:
         """
@@ -128,6 +129,7 @@ class INRGenerator(nn.Module):
 
         images = generation_result
         return images
+    '''
 
 
 class INRGeneratorBlock(nn.Module):
