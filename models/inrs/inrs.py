@@ -151,7 +151,7 @@ class FourierINRs(INRs):
         )
         layers.append(INRProxy(create_activation('relu')))
 
-        '''
+
         hid_layers = []
 
         for i in range(len(layer_sizes) - 1):
@@ -166,11 +166,12 @@ class FourierINRs(INRs):
             hid_layers.append(INRResidual(INRSequential(*curr_transform_layers)))
 
         layers.append(INRInputSkip(*hid_layers))
-        '''
 
+        '''
         for i in range(len(layer_sizes)-1):
             layers.extend(self.create_transform(layer_sizes[i], layer_sizes[i+1], 'linear'))
             layers.append(INRProxy(create_activation('sine')))
+        '''
 
         layers.extend(self.create_transform(layer_sizes[-1], 1, 'linear'))
         layers.append(INRProxy(create_activation('none')))
