@@ -88,9 +88,7 @@ class INRGenerator(nn.Module):
 
         self.mapping_network = nn.Sequential(
             *[INRGeneratorBlock(dims[i], dims[i + 1], True, is_first_layer=(i == 0)) for i in range(len(dims) - 2)])
-        self.connector = nn.Linear(dims[-2], dims[-1])
-
-        self.connector.bias.data.mul_(np.sqrt(1 / dims[1]))
+        self.connector = ResBlock(dims[-2], dims[-1], n_neurons=5*generator_hid_dim)
 
     def forward(self, img: Tensor, first_frame: Tensor, last_frame: Tensor, width: int, height: int) -> Dict[
         str, Union[Union[Tensor, float], Any]]:
