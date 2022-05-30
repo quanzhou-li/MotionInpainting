@@ -65,8 +65,8 @@ def render_img(cfg):
     data = next(iter(ds))
     bs, height, width = data['motion_imgs'].shape
     dist = torch.distributions.normal.Normal(
-        loc=torch.tensor(np.zeros([batch_size, 64]), requires_grad=False),
-        scale=torch.tensor(np.ones([batch_size, 64]), requires_grad=False)
+        loc=torch.tensor(np.zeros([batch_size, 256]), requires_grad=False),
+        scale=torch.tensor(np.ones([batch_size, 256]), requires_grad=False)
     )
     z_s = dist.rsample().float()
     fframes = data['motion_imgs'][:, :, 0]
