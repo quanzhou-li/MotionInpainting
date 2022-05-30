@@ -149,7 +149,7 @@ class FourierINRs(INRs):
             # weight_std=1.0,
             # bias_std=1.0
         )
-        layers.append(INRProxy(create_activation('sine')))
+        layers.append(INRProxy(create_activation('relu')))
 
         hid_layers = []
 
