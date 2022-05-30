@@ -156,10 +156,10 @@ class FourierINRs(INRs):
             curr_transform_layers = self.create_transform(
                 input_dim,
                 layer_sizes[i+1],
-                layer_type='linear')
+                layer_type='se_factorized')
             curr_transform_layers.append(INRProxy(create_activation('relu')))
 
-            hid_layers.append(INRResidual(INRSequential(*curr_transform_layers)))
+            hid_layers.append((INRSequential(*curr_transform_layers)))
 
         layers.append(INRInputSkip(*hid_layers))
 
