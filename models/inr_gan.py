@@ -84,7 +84,7 @@ class INRGenerator(nn.Module):
             *[INRGeneratorBlock(dims[i], dims[i + 1], True, is_first_layer=(i == 0)) for i in range(len(dims) - 2)])
         self.connector = nn.Linear(dims[-2], dims[-1])
 
-        # self.connector.bias.data.mul_(np.sqrt(1 / dims[1]))
+        self.connector.bias.data.mul_(np.sqrt(1 / dims[1]))
 
     def forward(self, z: Tensor, first_frame: Tensor, last_frame: Tensor, width: int, height: int) -> Tensor:
         feat_fframe = self.fframe_enc(first_frame)
