@@ -7,7 +7,7 @@ from torch.nn import functional as F
 from torch import Tensor
 from firelab.config import Config
 
-from models.inrs import FourierINRs, SIRENs
+from models.inrs import FourierINRs, SIRENs, HierarchicalFourierINRs
 from models.layers import create_activation
 from utils.training_utils import sample_noise
 
@@ -59,15 +59,15 @@ class INRGenerator(nn.Module):
         self.size_sampler = None
         self.class_embedder = None
         self.config = config
-        self.inr = SIRENs(self.config)
+        self.inr = HierarchicalFourierINRs(self.config)
         # self.inr = FourierINRs(self.config)
 
-        self.frame_D = 330
+        self.frame_D = 32
         self.latent_D = 512
         self.fframe_enc = ResBlock(self.frame_D, self.latent_D)
         self.lframe_enc = ResBlock(self.frame_D, self.latent_D)
 
-        self.width, self.height = 150, 330
+        self.width, self.height = 32, 32
         self.img_enc = ResBlock(self.width * self.height, self.latent_D)
         self.enc_mu = nn.Linear(self.latent_D, self.latent_D)
         self.enc_var = nn.Linear(self.latent_D, self.latent_D)

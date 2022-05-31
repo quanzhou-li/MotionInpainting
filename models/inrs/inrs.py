@@ -1,3 +1,5 @@
+from typing import List, Tuple
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -20,6 +22,13 @@ from models.inrs.modules import (
     MultiModalINRFactorizedSELinear,
     MultiModalINRSharedLinear,
     INRSVDLinear,
+    INRFourierFeats,
+    INRResConnector,
+    INRIdentity,
+    INRToRGB,
+    INRCoordsSkip,
+    INRModuleDict,
+    INRModule,
 )
 
 
@@ -218,3 +227,243 @@ class FourierINRs(INRs):
             return 10.0
         else:
             return np.sqrt(2 / in_features)
+
+
+class HierarchicalFourierINRs(FourierINRs, INRs):
+    """
+    Hierarchical INRs operate in a bit different regime:
+    we first generate 8x8 resolution, then 16x16, etc...
+    This allows us to use larger layer sizes at the beginning
+    """
+    def __init__(self, config: Config):
+        nn.Module.__init__(self)
+
+        self.config = config
+        self.init_model()
+        self.num_external_params = self.model.num_external_params
+        self.num_shared_params = sum(p.numel() for p in self.parameters())
+
+    def init_model(self):
+        blocks = []
+        resolutions = self.generate_img_sizes(self.config.data.target_img_size)
+        res_configs = [self.config.hp.inr.resolutions_params[resolutions[i]] for i in range(self.config.hp.inr.num_blocks)]
+
+        # print('resolution:', [c.resolution for c in res_configs])
+        # print('dim:', [c.dim for c in res_configs])
+        # print('num_learnable_coord_feats:', [c.num_learnable_coord_feats for c in res_configs])
+        # print('to_rgb:', [c.to_rgb for c in res_configs])
+        num_to_rgb_blocks = sum(c.to_rgb for c in res_configs)
+
+        for i, res_config in enumerate(res_configs):
+            # 1. Creating coord fourier feat embedders for each resolution
+            coord_embedder = INRSequential(
+                INRFourierFeats(res_config),
+                INRProxy(create_activation('sines_cosines')))
+            coord_feat_dim = coord_embedder[0].get_num_feats() * 2
+
+            # 2. Main branch. First need does not need any wiring, but later layers use it.
+            # A good thing is that we do not need skip-coords anymore.
+            if i > 0:
+                # Different-resolution blocks are wired together with the connector
+                connector_layers = [INRResConnector(
+                    res_configs[i - 1].dim,
+                    coord_feat_dim,
+                    res_config.dim,
+                    'nearest',
+                    **{"rank": 10, "equalized_lr": False}),
+                    INRProxy(create_activation('relu', {}))]
+                connector = INRSequential(*connector_layers)
+            else:
+                connector = INRIdentity()
+
+            transform_layers = []
+            for j in range(res_config.n_layers):
+                if i == 0 and j == 0:
+                    input_size = coord_feat_dim # Since we do not have previous feat dims
+                elif self.config.hp.inr.skip_coords:
+                    input_size = coord_feat_dim + res_config.dim
+                else:
+                    input_size = res_config.dim
+
+                transform_layers.extend(self.create_transform(
+                    input_size, res_config.dim,
+                    layer_type='se_factorized'))
+
+                transform_layers.append(INRProxy(create_activation('relu', {})))
+
+            if res_config.to_rgb or i == (self.config.hp.inr.num_blocks - 1):
+                to_rgb_weight_std = self.compute_weight_std(res_config.dim, is_coord_layer=False)
+                to_rgb_bias_std = self.compute_bias_std(res_config.dim, is_coord_layer=False)
+
+                to_rgb = INRToRGB(
+                    res_config.dim,
+                    'none',
+                    'nearest',
+                    to_rgb_weight_std,
+                    to_rgb_bias_std)
+            else:
+                to_rgb = INRIdentity()
+
+            if self.config.hp.inr.skip_coords:
+                transform = INRCoordsSkip(*transform_layers, concat_to_the_first=i > 0)
+            else:
+                transform = INRSequential(*transform_layers)
+
+            blocks.append(INRModuleDict({
+                'coord_embedder': coord_embedder,
+                'transform': transform,
+                'connector': connector,
+                'to_rgb': to_rgb,
+            }))
+
+        self.model = INRModuleDict({f'b_{i}': b for i, b in enumerate(blocks)})
+
+    def create_res_config(self, block_idx: int) -> Config:
+        increase_conf = self.config.hp.inr.res_increase_scheme
+        num_blocks = self.config.hp.inr.num_blocks
+        resolutions = self.generate_img_sizes(self.config.data.target_img_size)
+        fourier_scale = np.linspace(increase_conf.fourier_scales.min, increase_conf.fourier_scales.max, num_blocks)[block_idx]
+        dim = np.linspace(increase_conf.dims.max, increase_conf.dims.min, num_blocks).astype(int)[block_idx]
+        num_coord_feats = np.linspace(increase_conf.num_coord_feats.max, increase_conf.num_coord_feats.min, num_blocks).astype(int)[block_idx]
+
+        return Config({
+            'resolution': resolutions[block_idx],
+            'num_learnable_coord_feats': num_coord_feats.item(),
+            'use_diag_feats': resolutions[block_idx] <= increase_conf.diag_feats_threshold,
+            'max_num_fixed_coord_feats': 10000 if increase_conf.use_fixed_coord_feats else 0,
+            'dim': dim.item(),
+            'fourier_scale': fourier_scale.item(),
+            'to_rgb': resolutions[block_idx] >= increase_conf.to_rgb_res_threshold,
+            'n_layers': 1
+        })
+
+    def generate_image(self, inrs_weights: Tensor, img_size: int, aspect_ratios=None, return_activations: bool=False) -> Tensor:
+        # Generating coords for each resolution
+        batch_size = len(inrs_weights)
+        img_sizes = self.generate_img_sizes(img_size)
+
+        coords_list = [generate_coords(batch_size, s, s) for s in img_sizes] # (num_blocks, [batch_size, 2, num_coords_in_block])
+
+        if return_activations:
+            images_raw, activations = self.forward(coords_list, inrs_weights, return_activations=True) # [batch_size, num_channels, num_coords]
+        else:
+            images_raw = self.forward(coords_list, inrs_weights) # [batch_size, num_channels, num_coords]
+
+        images = images_raw.view(batch_size, 3, img_size, img_size) # [batch_size, num_channels, img_size, img_size]
+
+        return (images, activations) if return_activations else images
+
+    def apply_weights(self,
+                      coords_list: List[Tensor],
+                      inrs_weights: Tensor,
+                      return_activations: bool=False,
+                      noise_injections: List[Tensor]=None) -> Tensor:
+
+        device = inrs_weights.device
+        curr_w = inrs_weights
+        images = None
+
+        if return_activations:
+            activations = {}
+
+        for i in range(self.config.hp.inr.num_blocks):
+            coords = coords_list[i].to(device)
+            block = self.model[f'b_{i}']
+            curr_w, coord_feats = self.apply_module(curr_w, block.coord_embedder, coords)
+
+            if i == 0:
+                if self.config.hp.inr.skip_coords:
+                    curr_w, x = self.apply_module(curr_w, block.transform, coord_feats, coord_feats)
+                else:
+                    curr_w, x = self.apply_module(curr_w, block.transform, coord_feats)
+            else:
+                # Apply a connector
+                curr_w, x = self.apply_module(curr_w, block.connector[0], x, coord_feats) # transform
+                if return_activations:
+                    activations[f'block-{i}-connector'] = x.cpu().detach()
+                curr_w, x = self.apply_module(curr_w, block.connector[1], x) # activation
+
+                # Apply a transform
+                if self.config.hp.inr.skip_coords:
+                    curr_w, x = self.apply_module(curr_w, block.transform, x, coord_feats)
+                else:
+                    curr_w, x = self.apply_module(curr_w, block.transform, x)
+
+            if return_activations:
+                activations[f'block-{i}'] = x.cpu().detach()
+
+            if isinstance(block.to_rgb, INRToRGB):
+                # Converting to an image (possibly using the skip)
+                curr_w, images = self.apply_module(curr_w, block.to_rgb, x, images)
+
+                if return_activations:
+                    activations[f'block-{i}-images'] = images.cpu().detach()
+
+        if self.config.hp.inr.output_activation == 'tanh':
+            out = images.tanh()
+        elif self.config.hp.inr.output_activation == 'clamp':
+            out = images.clamp(-1.0, 1.0)
+        elif self.config.hp.inr.output_activation == 'sigmoid':
+            out = images.sigmoid() * 2 - 1
+        elif self.config.hp.inr.output_activation in ['none', None]:
+            out = images
+        else:
+            raise NotImplementedError(f'Unknown output activation: {self.config.hp.inr.output_activation}')
+
+        if return_activations:
+            activations[f'block-final'] = out.cpu().detach()
+
+        assert curr_w.numel() == 0, f"Not all params were used: {curr_w.shape}"
+
+        return (out, activations) if return_activations else out
+
+    def apply_module(self, curr_w: Tensor, module: INRModule, *inputs) -> Tuple[Tensor, Tensor]:
+        """
+        Applies params and returns the remaining ones
+        """
+        module_params = curr_w[:, :module.num_external_params]
+        y = module(*inputs, module_params)
+        remaining_w = curr_w[:, module.num_external_params:]
+
+        return remaining_w, y
+
+    def generate_img_sizes(self, target_img_size: int) -> List[int]:
+        """
+        Generates coord features for each resolution to produce a final image
+        The main logic is in computing resolutions
+        """
+        if self.config.hp.inr.res_increase_scheme.enabled:
+            return self.generate_linear_img_sizes(target_img_size)
+        else:
+            return self.generate_exp_img_sizes(target_img_size)
+
+    def generate_exp_img_sizes(self, target_img_size: int) -> List[int]:
+        # This determines an additional upscale factor for the upscaling block
+        extra_upscale_factor = target_img_size // self.config.data.target_img_size
+        img_sizes = []
+        curr_img_size = target_img_size
+
+        for i in range(self.config.hp.inr.num_blocks - 1, -1, -1):
+            img_sizes.append(curr_img_size)
+
+            if i == self.config.hp.inr.upsample_block_idx:
+                curr_img_size = curr_img_size // (extra_upscale_factor * 2)
+            else:
+                curr_img_size = curr_img_size // 2
+
+        return list(reversed(img_sizes))
+
+    def generate_linear_img_sizes(self, target_img_size: int) -> List[int]:
+        min_size = self.config.hp.inr.res_increase_scheme.min_resolution
+        max_size = target_img_size
+        img_sizes = np.linspace(min_size, max_size, self.config.hp.inr.num_blocks).astype(int)
+
+        return img_sizes.tolist()
+
+    def forward(self, coords_list: List[Tensor], inrs_weights: Tensor, return_activations: bool=False) -> Tensor:
+        """
+        Computes a batch of INRs in the given coordinates
+        @param coords_list: coordinates | (num_blocks, [batch_size, n_coords, 2])
+        @param inrs_weights: weights of INRs | [batch_size, coord_dim]
+        """
+        return self.apply_weights(coords_list, inrs_weights, return_activations=return_activations)
