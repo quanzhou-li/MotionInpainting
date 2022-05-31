@@ -62,12 +62,12 @@ class INRGenerator(nn.Module):
         self.inr = FourierINRs(self.config)
         # self.inr = FourierINRs(self.config)
 
-        self.frame_D = 32
+        self.frame_D = 330
         self.latent_D = 512
         self.fframe_enc = ResBlock(self.frame_D, self.latent_D)
         self.lframe_enc = ResBlock(self.frame_D, self.latent_D)
 
-        self.width, self.height = 32, 32
+        self.width, self.height = 32, 330
         self.img_enc = ResBlock(self.width * self.height, self.latent_D)
         self.enc_mu = nn.Linear(self.latent_D, self.latent_D)
         self.enc_var = nn.Linear(self.latent_D, self.latent_D)
