@@ -96,7 +96,7 @@ class INRGenerator(nn.Module):
         feat_fframe = self.fframe_enc(first_frame)
         feat_lframe = self.lframe_enc(last_frame)
         bs = img.shape[0]
-        feat_img = self.img_enc(img.view(bs, self.width * self.height))
+        feat_img = self.img_enc(img.reshape(bs, self.width * self.height))
         dist = torch.distributions.normal.Normal(self.enc_mu(feat_img), F.softplus(self.enc_var(feat_img)))
 
         z = dist.rsample()
