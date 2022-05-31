@@ -161,7 +161,7 @@ class SIRENs(INRs):
             1,
             layer_type='linear' # The last layer is small so let's also control it fully
         ))
-        layers.append(INRProxy(create_activation('tanh')))
+        layers.append(INRProxy(create_activation('none')))
 
         self.model = nn.Sequential(*layers)
 
@@ -209,7 +209,7 @@ class FourierINRs(INRs):
         '''
 
         layers.extend(self.create_transform(layer_sizes[-1], 1, 'linear'))
-        layers.append(INRProxy(create_activation('tanh')))
+        layers.append(INRProxy(create_activation('none')))
 
         self.model = nn.Sequential(*layers)
 
