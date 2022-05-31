@@ -4,7 +4,7 @@ import torch.nn as nn
 from torch import Tensor
 from firelab.config import Config
 
-from models.layers import create_activation
+from models.layers import create_activation, Sine
 from models.inrs.modules import (
     INRProxy,
     INRLinear,
@@ -35,6 +35,7 @@ def generate_coords(batch_size: int, width: int, height: int) -> Tensor:
     coords = coords.t().view(1, 2, width * height).repeat(batch_size, 1, 1) # [batch_size, 2, n_coords]
 
     return coords
+
 
 class INRs(nn.Module):
     def __init__(self, config: Config):
@@ -135,6 +136,40 @@ class INRs(nn.Module):
         return self.compute_weight_std(in_features, is_coord_layer) * additional_scale
 
 
+class SIRENs(INRs):
+    def __init__(self, config: Config):
+        super().__init__(config)
+
+    def init_model(self):
+        layer_sizes = [128, 128, 128]
+        layers = self.create_transform(
+            2,
+            layer_sizes[0],
+            'linear', # First layer is of full control
+            is_coord_layer=True)
+        layers.append(INRProxy(Sine(scale=1.0)))
+
+        for i in range(len(layer_sizes) - 1):
+            layers.extend(self.create_transform(
+                layer_sizes[i],
+                layer_sizes[i+1],
+                layer_type='se_factorized')) # Middle layers are large so they are controlled via AdaIN
+            layers.append(INRProxy(Sine(scale=1.0)))
+
+        layers.extend(self.create_transform(
+            layer_sizes[-1],
+            1,
+            layer_type='linear' # The last layer is small so let's also control it fully
+        ))
+        layers.append(INRProxy(create_activation('tanh')))
+
+        self.model = nn.Sequential(*layers)
+
+    def compute_weight_std(self, in_features: int, is_coord_layer: bool) -> float:
+        weight_std = np.sqrt(2 / in_features)
+        return weight_std
+
+
 class FourierINRs(INRs):
     def __init__(self, config: Config):
         super().__init__(config)
@@ -183,4 +218,3 @@ class FourierINRs(INRs):
             return 10.0
         else:
             return np.sqrt(2 / in_features)
-
