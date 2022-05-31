@@ -209,7 +209,7 @@ class FourierINRs(INRs):
         '''
 
         layers.extend(self.create_transform(layer_sizes[-1], 1, 'linear'))
-        layers.append(INRProxy(create_activation('none')))
+        layers.append(INRProxy(create_activation('tanh')))
 
         self.model = nn.Sequential(*layers)
 
