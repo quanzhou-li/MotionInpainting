@@ -59,7 +59,7 @@ class INRGenerator(nn.Module):
         self.size_sampler = None
         self.class_embedder = None
         self.config = config
-        self.inr = HierarchicalFourierINRs(self.config)
+        self.inr = FourierINRs(self.config)
         # self.inr = FourierINRs(self.config)
 
         self.frame_D = 32
