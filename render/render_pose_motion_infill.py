@@ -63,6 +63,7 @@ def render_img(cfg):
     ds = load_torch(dataset_dir=cfg.data_path, ds_name=cfg.ds_name)
     batch_size = 8
     data = next(iter(ds))
+    data['motion_imgs'] = data['motion_imgs'][:, :, :32]
     bs, height, width = data['motion_imgs'].shape
     dist = torch.distributions.normal.Normal(
         loc=torch.tensor(np.zeros([batch_size, 256]), requires_grad=False),
@@ -71,9 +72,10 @@ def render_img(cfg):
     z_s = dist.rsample().float()
     fframes = data['motion_imgs'][:, :, 0]
     lframes = data['motion_imgs'][:, :, -1]
-    res = inr(z_s, fframes, lframes, width, height)
+    # res = inr(z_s, fframes, lframes, width, height)
+    res = inr(data['motion_imgs'], fframes, lframes, width, height)
     T = width
-    fullpose_6D = res.view(bs, height, width)[0].t()  # [n_frames, n_pose_D]
+    fullpose_6D = res['imgs'].view(bs, height, width)[0].t()  # [n_frames, n_pose_D]
     fullpose_rotmat = torch.zeros((T, 55, 3, 3))
     for i in range(T):
         fullpose_rotmat[i] = CRot2rotmat(torch.tensor(fullpose_6D[[i]]))
@@ -94,7 +96,7 @@ def render_img(cfg):
     }
 
     LossL2 = torch.nn.MSELoss(reduction='mean')
-    loss = 100 * LossL2(data['motion_imgs'], res.view(bs, height, width))
+    loss = 100 * LossL2(data['motion_imgs'], res['imgs'].view(bs, height, width))
     print(loss)
 
     sbj_mesh = os.path.join(cfg.tool_meshes, cfg.vtemp)
@@ -132,7 +134,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Render GNet Poses')
     parser.add_argument('--model-path', required=True, type=str,
                         help='Path to the trained model')
-    parser.add_argument('--data-path', type=str,
+    parser.add_argument('--data-path', default='datasets_parsed_motion_imgs/', type=str,
                         help='Path to the data to be tested')
     parser.add_argument('--renderings', default='renderings_motion_imgs', type=str,
                         help='Path to the directory saving the renderings')
