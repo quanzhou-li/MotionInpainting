@@ -130,7 +130,9 @@ class Trainer:
 
     def loss_inr(self, data, drec):
         bs, height, width = data['motion_imgs'].shape
-        loss_reconstruction = 100 * self.LossL2(data['motion_imgs'], drec['imgs'].view(bs, height, width))
+        loss_reconstruction = 100 * self.LossL2(data['motion_imgs'][:, :330, :], drec['imgs'].view(bs, height, width)[:, :330, :])
+
+        loss_root = 50 * self.LossL1(data['motion_imgs'][:, 330:, :], drec['imgs'].view(bs, height, width)[:, 330:, :])
 
         q_z = torch.distributions.normal.Normal(drec['mean'], drec['std'])
         p_z = torch.distributions.normal.Normal(
@@ -149,6 +151,7 @@ class Trainer:
             'loss_kl': loss_kl,
             'loss_firstframe': loss_firstframe,
             'loss_lastframe': loss_lastframe,
+            'loss_root': loss_root,
         }
 
         loss_total = torch.stack(list(loss_dict.values())).sum()
