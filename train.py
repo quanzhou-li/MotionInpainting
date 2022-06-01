@@ -25,7 +25,7 @@ if __name__=='__main__':
     parser.add_argument('--batch-size', default=16, type=int,
                         help='Training batch size')
 
-    parser.add_argument('--n-workers', default=8, type=int,
+    parser.add_argument('--n-workers', default=16, type=int,
                         help='Number of PyTorch dataloader workers')
 
     parser.add_argument('--n-epochs', default=200, type=int,
