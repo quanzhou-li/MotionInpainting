@@ -49,6 +49,10 @@ class Trainer:
         self.config_inr = FirelabCFG.load(cfg.inr_config)
         self.inr = INRGenerator(self.config_inr).to(self.device)
 
+        if cfg.use_multigpu:
+            self.inr = nn.DataParallel(self.inr)
+            logger("Training on Multiple GPUs")
+
         self.LossL1 = torch.nn.L1Loss(reduction='mean')
         self.LossL2 = torch.nn.MSELoss(reduction='mean')
         self.bce_loss = torch.nn.BCEWithLogitsLoss().to(self.device)
