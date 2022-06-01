@@ -63,7 +63,7 @@ def render_img(cfg):
     ds = load_torch(dataset_dir=cfg.data_path, ds_name=cfg.ds_name)
     batch_size = 8
     data = next(iter(ds))
-    data['motion_imgs'] = data['motion_imgs'][:, :, :32]
+    data['motion_imgs'] = data['motion_imgs'][:, :, :64]
     bs, height, width = data['motion_imgs'].shape
     dist = torch.distributions.normal.Normal(
         loc=torch.tensor(np.zeros([batch_size, 256]), requires_grad=False),
