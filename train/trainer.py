@@ -60,10 +60,6 @@ class Trainer:
         self.try_num = cfg.try_num
         self.epochs_completed = 0
 
-        if cfg.use_multigpu:
-            self.inr = nn.DataParallel(self.inr)
-            logger("Training on Multiple GPUs")
-
         vars_inr = [var[1] for var in self.inr.named_parameters()]
         inr_n_params = sum(p.numel() for p in vars_inr if p.requires_grad)
         logger('Total Trainable Parameters for INR Net is %2.2f M.' % ((inr_n_params) * 1e-6))
