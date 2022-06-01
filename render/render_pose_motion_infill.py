@@ -66,14 +66,13 @@ def render_img(cfg):
     data['motion_imgs'] = data['motion_imgs'][:, :, :64]
     bs, height, width = data['motion_imgs'].shape
     dist = torch.distributions.normal.Normal(
-        loc=torch.tensor(np.zeros([batch_size, 256]), requires_grad=False),
-        scale=torch.tensor(np.ones([batch_size, 256]), requires_grad=False)
+        loc=torch.tensor(np.zeros([batch_size, 512]), requires_grad=False),
+        scale=torch.tensor(np.ones([batch_size, 512]), requires_grad=False)
     )
     z_s = dist.rsample().float()
     fframes = data['motion_imgs'][:, :, 0]
     lframes = data['motion_imgs'][:, :, -1]
-    # res = inr(z_s, fframes, lframes, width, height)
-    res = inr(data['motion_imgs'], fframes, lframes, width, height)
+    res = inr.decode(z_s, fframes, lframes, width, height)
     T = width
     fullpose_6D = res['imgs'].view(bs, height, width)[0].t()  # [n_frames, n_pose_D]
     fullpose_rotmat = torch.zeros((T, 55, 3, 3))
