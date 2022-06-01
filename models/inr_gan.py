@@ -67,7 +67,7 @@ class INRGenerator(nn.Module):
         self.fframe_enc = ResBlock(self.frame_D, self.latent_D)
         self.lframe_enc = ResBlock(self.frame_D, self.latent_D)
 
-        self.width, self.height = 150, 330
+        self.width, self.height = 100, 330
         self.img_enc = ResBlock(self.width * self.height, self.latent_D)
         self.enc_mu = nn.Linear(self.latent_D, self.latent_D)
         self.enc_var = nn.Linear(self.latent_D, self.latent_D)
