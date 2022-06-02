@@ -140,7 +140,7 @@ class Trainer:
             scale=torch.tensor(np.ones([bs, 512]), requires_grad=False).to(
                 self.device).type(self.dtype)
         )
-        loss_kl = 30 * 0.005 * torch.mean(torch.sum(torch.distributions.kl.kl_divergence(q_z, p_z)))
+        loss_kl = 10 * 0.005 * torch.mean(torch.sum(torch.distributions.kl.kl_divergence(q_z, p_z)))
 
         loss_dict = {
             'loss_reconstruction': loss_reconstruction,
