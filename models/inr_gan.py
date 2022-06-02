@@ -67,7 +67,7 @@ class INRGenerator(nn.Module):
         self.fframe_enc = ResBlock(self.frame_D, self.latent_D)
         self.lframe_enc = ResBlock(self.frame_D, self.latent_D)
 
-        self.width, self.height = 64, 330
+        self.width, self.height = 100, 330
         self.img_enc = ResBlock(self.width * self.height, self.latent_D)
         self.enc_mu = nn.Linear(self.latent_D, self.latent_D)
         self.enc_var = nn.Linear(self.latent_D, self.latent_D)
@@ -144,11 +144,9 @@ class INRGenerator(nn.Module):
         """
         inputs = self.sample_noise(batch_size).to(device)  # [batch_size, z_dim]
         inr_params = self.compute_model_forward(inputs)
-        
         # Generating the images
         generation_result = self.forward_for_weights(
             inr_params, width, height, return_activations=return_activations)
-            
         images = generation_result
         return images
     '''
