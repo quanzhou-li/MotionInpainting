@@ -151,7 +151,7 @@ class Trainer:
             'loss_kl': loss_kl,
             'loss_firstframe': loss_firstframe,
             'loss_lastframe': loss_lastframe,
-            'loss_root': loss_root,
+            # 'loss_root': loss_root,
         }
 
         loss_total = torch.stack(list(loss_dict.values())).sum()
