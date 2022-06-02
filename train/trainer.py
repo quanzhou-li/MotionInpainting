@@ -2,6 +2,7 @@
 
 import os
 import sys
+import numpy as np
 
 sys.path.append('.')
 sys.path.append('..')
