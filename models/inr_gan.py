@@ -165,7 +165,6 @@ class INRGeneratorBlock(nn.Module):
         else:
             self.residual = False
 
-        layers.append(nn.BatchNorm1d(out_features))
         layers.append(create_activation('relu', {}))
 
         self.transform = nn.Sequential(*layers)
