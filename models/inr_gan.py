@@ -89,7 +89,7 @@ class INRGenerator(nn.Module):
 
         self.mapping_network = nn.Sequential(
             *[INRGeneratorBlock(dims[i], dims[i + 1], True, is_first_layer=(i == 0)) for i in range(len(dims) - 2)])
-        self.connector = ResBlock(dims[-2], dims[-1], n_neurons=dims[-2])
+        self.connector = nn.Linear(dims[-2], dims[-1])
 
     def forward(self, img: Tensor, first_frame: Tensor, last_frame: Tensor, width: int, height: int) -> Dict[
         str, Union[Union[Tensor, float], Any]]:
