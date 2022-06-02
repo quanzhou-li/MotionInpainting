@@ -5,5 +5,5 @@ python train.py --work-dir logs \
        --inr-config config/inr-gan.yml \
        --batch-size 16 \
        --n-workers 8 \
-       --use-multigpu true \
+       --use-multigpu false \
        --lr 1e-3
