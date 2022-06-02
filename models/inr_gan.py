@@ -1,5 +1,6 @@
 from typing import List, Dict, Union, Any
 
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
@@ -143,9 +144,11 @@ class INRGenerator(nn.Module):
         """
         inputs = self.sample_noise(batch_size).to(device)  # [batch_size, z_dim]
         inr_params = self.compute_model_forward(inputs)
+        
         # Generating the images
         generation_result = self.forward_for_weights(
             inr_params, width, height, return_activations=return_activations)
+            
         images = generation_result
         return images
     '''
