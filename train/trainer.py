@@ -79,7 +79,7 @@ class Trainer:
         for it, data in enumerate(self.ds_train):
             data = {k: data[k].to(self.device) for k in data.keys()}
             self.optimizer_inr.zero_grad()
-            data['motion_imgs'] = data['motion_imgs'][:, :, :64]
+            data['motion_imgs'] = data['motion_imgs'][:, :330, :64]
             bs, height, width = data['motion_imgs'].shape
             fframes = data['motion_imgs'][:, :, 0]
             lframes = data['motion_imgs'][:, :, -1]
@@ -116,7 +116,7 @@ class Trainer:
         with torch.no_grad():
             for it, data in enumerate(dataset):
                 data = {k: data[k].to(self.device) for k in data.keys()}
-                data['motion_imgs'] = data['motion_imgs'][:, :, :64]
+                data['motion_imgs'] = data['motion_imgs'][:, :330, :64]
                 bs, height, width = data['motion_imgs'].shape
                 fframes = data['motion_imgs'][:, :, 0]
                 lframes = data['motion_imgs'][:, :, -1]
