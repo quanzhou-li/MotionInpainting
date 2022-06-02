@@ -6,4 +6,4 @@ python train.py --work-dir logs \
        --batch-size 16 \
        --n-workers 8 \
        --use-multigpu false \
-       --lr 1e-3
+       --lr 5e-4
