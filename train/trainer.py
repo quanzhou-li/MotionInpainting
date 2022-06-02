@@ -79,7 +79,7 @@ class Trainer:
         for it, data in enumerate(self.ds_train):
             data = {k: data[k].to(self.device) for k in data.keys()}
             self.optimizer_inr.zero_grad()
-            data['motion_imgs'] = data['motion_imgs'][:, :, :100]
+            data['motion_imgs'] = data['motion_imgs'][:, :, :64]
             bs, height, width = data['motion_imgs'].shape
             fframes = data['motion_imgs'][:, :, 0]
             lframes = data['motion_imgs'][:, :, -1]
