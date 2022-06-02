@@ -81,7 +81,7 @@ class INRGenerator(nn.Module):
         self.size_sampler = nn.Identity()
 
         generator_hid_dim = 2048
-        generator_num_layers = 5
+        generator_num_layers = 10
 
         dims = [input_dim] \
                + [generator_hid_dim] * generator_num_layers \
