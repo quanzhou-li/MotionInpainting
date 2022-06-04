@@ -67,7 +67,7 @@ class INRGenerator(nn.Module):
         self.fframe_enc = ResBlock(self.frame_D, self.latent_D)
         self.lframe_enc = ResBlock(self.frame_D, self.latent_D)
 
-        self.width, self.height = 64, self.frame_D
+        self.width, self.height = 64, 330
         self.img_enc = ResBlock(self.width * self.height, self.latent_D)
         self.enc_mu = nn.Linear(self.latent_D, self.latent_D)
         self.enc_var = nn.Linear(self.latent_D, self.latent_D)
@@ -165,7 +165,6 @@ class INRGeneratorBlock(nn.Module):
         else:
             self.residual = False
 
-        layers.append(nn.BatchNorm1d(out_features))
         layers.append(create_activation('relu', {}))
 
         self.transform = nn.Sequential(*layers)
