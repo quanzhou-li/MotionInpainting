@@ -10,5 +10,5 @@ python train.py --work-dir $logs \
        --batch-size 16 \
        --use-multigpu false \
        --n-workers 12 \
-       --n-epochs 500 \
+       --n-epochs 300 \
        --lr 5e-4
