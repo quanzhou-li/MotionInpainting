@@ -56,8 +56,8 @@ def render_img(cfg):
 
     # set the camera pose
     camera_pose = np.eye(4)
-    camera_pose[:3, :3] = euler([80, 15, 0], 'xzx')
-    camera_pose[:3, 3] = np.array([0.8, -1.8, 1.5])
+    camera_pose[:3, :3] = euler([80, 30, 0], 'xzx')
+    camera_pose[:3, 3] = np.array([1.3, -2.3, 1.5])
     mv.update_camera_pose(camera_pose)
 
     ds = load_torch(dataset_dir=cfg.data_path, ds_name=cfg.ds_name)
@@ -74,10 +74,11 @@ def render_img(cfg):
     lframes = data['motion_imgs'][:, :, -1]
     res = inr.decode(z_s, fframes, lframes, width, height)
     T = width
-    fullpose_6D = res['imgs'].view(bs, height, width)[0].t()  # [n_frames, n_pose_D]
+    fullpose_6D = res['imgs'].view(bs, height, width)[:, :330, :][0].t()  # [n_frames, n_pose_D]
+    root = res['imgs'].view(bs, height, width)[:, 330:333, :][0].t()
     if cfg.replace_fl:
-        fullpose_6D[0, :] = fframes[0]
-        fullpose_6D[-1, :] = lframes[0]
+        fullpose_6D[0, :] = fframes[0, :330]
+        fullpose_6D[-1, :] = lframes[0, :330]
     fullpose_rotmat = torch.zeros((T, 55, 3, 3))
     for i in range(T):
         fullpose_rotmat[i] = CRot2rotmat(torch.tensor(fullpose_6D[[i]]))
@@ -94,7 +95,7 @@ def render_img(cfg):
         'reye_pose': fullpose[:, 72:75].float(),
         'left_hand_pose': fullpose[:, 75:120].float(),
         'right_hand_pose': fullpose[:, 120:165].float(),
-        'transl': torch.zeros((T, 3)) + torch.Tensor([0, 0.5, 1.0])
+        'transl': root.float(),
     }
 
     LossL2 = torch.nn.MSELoss(reduction='mean')
@@ -136,7 +137,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Render GNet Poses')
     parser.add_argument('--model-path', required=True, type=str,
                         help='Path to the trained model')
-    parser.add_argument('--data-path', default='datasets_parsed_motion_imgs/', type=str,
+    parser.add_argument('--data-path', default='datasets_parsed_motion_inpaint_64frames/', type=str,
                         help='Path to the data to be tested')
     parser.add_argument('--renderings', default='renderings_motion_imgs', type=str,
                         help='Path to the directory saving the renderings')
