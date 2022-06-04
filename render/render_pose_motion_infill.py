@@ -75,6 +75,9 @@ def render_img(cfg):
     res = inr.decode(z_s, fframes, lframes, width, height)
     T = width
     fullpose_6D = res['imgs'].view(bs, height, width)[0].t()  # [n_frames, n_pose_D]
+    if cfg.replace_fl:
+        fullpose_6D[0, :] = fframes[0]
+        fullpose_6D[-1, :] = lframes[0]
     fullpose_rotmat = torch.zeros((T, 55, 3, 3))
     for i in range(T):
         fullpose_rotmat[i] = CRot2rotmat(torch.tensor(fullpose_6D[[i]]))
@@ -140,6 +143,8 @@ if __name__ == '__main__':
     parser.add_argument('--ds-name', default='train_data', type=str,
                         help='File name of the dataset')
     parser.add_argument('--inr-config', default='config/inr-gan.yml', type=str)
+    parser.add_argument('--replace-fl', default=False, type=lambda arg: arg.lower() in ['true', '1'],
+                        help='If to replace the first and last frames of the predicted results')
 
     args = parser.parse_args()
     data_path = args.data_path
@@ -147,6 +152,7 @@ if __name__ == '__main__':
     renderings = args.renderings
     ds_name = args.ds_name
     inr_config = args.inr_config
+    replace_fl = args.replace_fl
 
     cfg = {
         'tool_meshes': 'toolMeshes',
@@ -157,7 +163,8 @@ if __name__ == '__main__':
         'gender': 'male',
         'data_path': data_path,
         'renderings': renderings,
-        'ds_name': ds_name
+        'ds_name': ds_name,
+        'replace_fl': replace_fl,
     }
 
     cfg = Config(**cfg)
