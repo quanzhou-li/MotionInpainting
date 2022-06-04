@@ -5,7 +5,7 @@ echo Enter the path to logs
 read -p 'Path: ' logs
 
 python train.py --work-dir $logs \
-       --data-path datasets_parsed_motion_inpaint_64frames/ \
+       --data-path datasets_parsed_motion_inpaint_64with_object/ \
        --inr-config config/inr-gan.yml \
        --batch-size 16 \
        --use-multigpu false \
