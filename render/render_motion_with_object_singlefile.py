@@ -79,6 +79,8 @@ def render_img(cfg):
     if cfg.replace_fl:
         fullpose_6D[0, :] = fframes[0, :330]
         fullpose_6D[-1, :] = lframes[0, :330]
+        root[0, :] = fframes[0, 330:333]
+        root[-1, :] = lframes[0, 330:333]
     fullpose_rotmat = torch.zeros((T, 55, 3, 3))
     for i in range(T):
         fullpose_rotmat[i] = CRot2rotmat(torch.tensor(fullpose_6D[[i]]))
@@ -117,11 +119,16 @@ def render_img(cfg):
     obj_vtemp = np.array(obj_mesh.vertices)
     obj_m = ObjectModel(v_template=obj_vtemp,
                         batch_size=T)
+    obj_transl = res['imgs'].view(bs, height, width)[:, 339:, :][0].t()
     obj_orient_6D = res['imgs'].view(bs, height, width)[:, 333:339, :][0].t()  # [n_frames, n_pose_D]
+    if cfg.replace_fl:
+        obj_orient_6D[0, :] = fframes[0, 333:339]
+        obj_orient_6D[-1, :] = lframes[0, 333:339]
+        obj_transl[0, :] = fframes[0, 339:]
+        obj_transl[-1, :] = lframes[0, 339:]
     obj_orient_rotmat = CRot2rotmat(obj_orient_6D)
     obj_orient_rotmat = obj_orient_rotmat.reshape(T, 1, 3, 3)
     obj_orient = rotmat2aa(obj_orient_rotmat).reshape(T, 3)
-    obj_transl = res['imgs'].view(bs, height, width)[:, 339:, :][0].t()
 
     obj_params = {
         'global_orient': obj_orient.float().cpu().detach().numpy(),
