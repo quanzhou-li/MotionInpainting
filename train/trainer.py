@@ -138,9 +138,8 @@ class Trainer:
         diff = torch.bmm(rotmat1, rotmat2.permute(0, 2, 1))
         batch_trace = diff.diagonal(offset=0, dim1=-1, dim2=-2).sum(-1)  # Compute batch trace
 
-        numerator = torch.where(batch_trace>0, batch_trace-(1.+3e-7), batch_trace-(1.-1e-5))
+        numerator = torch.where(batch_trace>0, batch_trace-(1.+5e-7), batch_trace-(1.-1e-5))
         denominator = 2.
-        temp = numerator / denominator
         loss = torch.acos(numerator / denominator).sum() / bs  # Add a small number to the denominator due to numerical instability
         return loss
 
@@ -151,14 +150,14 @@ class Trainer:
                                                                drec['imgs'].view(bs, height, width)[:, :330, :].permute(0, 2, 1))
 
         # loss_root = 100 * self.LossL2(data['motion_imgs'][:, 330:333, :], drec['imgs'].view(bs, height, width)[:, 330:333, :])
-        loss_root = 30 * self.LossL1(data['motion_imgs'][:, 330:333, :], drec['imgs'].view(bs, height, width)[:, 330:333, :])
+        loss_root = 100 * self.LossL1(data['motion_imgs'][:, 330:333, :], drec['imgs'].view(bs, height, width)[:, 330:333, :])
 
         # loss_obj_orient = 100 * self.LossL2(data['motion_imgs'][:, 333:339, :], drec['imgs'].view(bs, height, width)[:, 333:339, :])
         loss_obj_orient = self.compute_geodesic_loss(data['motion_imgs'][:, 333:339, :].permute(0, 2, 1),
                                                            drec['imgs'].view(bs, height, width)[:, 333:339, :].permute(0, 2, 1))
 
         # loss_obj_transl = 100 * self.LossL2(data['motion_imgs'][:, 339:, :], drec['imgs'].view(bs, height, width)[:, 339:, :])
-        loss_obj_transl = 30 * self.LossL1(data['motion_imgs'][:, 339:, :], drec['imgs'].view(bs, height, width)[:, 339:, :])
+        loss_obj_transl = 100 * self.LossL1(data['motion_imgs'][:, 339:, :], drec['imgs'].view(bs, height, width)[:, 339:, :])
 
         q_z = torch.distributions.normal.Normal(drec['mean'], drec['std'])
         p_z = torch.distributions.normal.Normal(
