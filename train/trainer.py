@@ -4,6 +4,8 @@
 import os
 import sys
 
+import torch
+
 sys.path.append('.')
 sys.path.append('..')
 
@@ -13,7 +15,7 @@ from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
 from firelab.config import Config as FirelabCFG
 
-from tools.utils import makepath, makelogger
+from tools.utils import makepath, makelogger, CRot2rotmat
 from data.dataloader import LoadData
 from models.inr_gan import *
 
@@ -129,15 +131,34 @@ class Trainer:
 
         return eval_loss_dict_inr
 
+    def compute_geodesic_loss(self, mat1, mat2):
+        bs = mat1.shape[0]
+        rotmat1 = CRot2rotmat(mat1)
+        rotmat2 = CRot2rotmat(mat2)
+        diff = torch.bmm(rotmat1, rotmat2.permute(0, 2, 1))
+        batch_trace = diff.diagonal(offset=0, dim1=-1, dim2=-2).sum(-1)  # Compute batch trace
+
+        numerator = torch.where(batch_trace>0, batch_trace-(1.+3e-7), batch_trace-(1.-1e-5))
+        denominator = 2.
+        temp = numerator / denominator
+        loss = torch.acos(numerator / denominator).sum() / bs  # Add a small number to the denominator due to numerical instability
+        return loss
+
     def loss_inr(self, data, drec):
         bs, height, width = data['motion_imgs'].shape
-        loss_reconstruction = 100 * self.LossL2(data['motion_imgs'][:, :, :], drec['imgs'].view(bs, height, width)[:, :, :])
+        # loss_reconstruction = 100 * self.LossL2(data['motion_imgs'][:, :, :], drec['imgs'].view(bs, height, width)[:, :, :])
+        loss_reconstruction = self.compute_geodesic_loss(data['motion_imgs'][:, :330, :].permute(0, 2, 1),
+                                                               drec['imgs'].view(bs, height, width)[:, :330, :].permute(0, 2, 1))
 
         # loss_root = 100 * self.LossL2(data['motion_imgs'][:, 330:333, :], drec['imgs'].view(bs, height, width)[:, 330:333, :])
+        loss_root = 30 * self.LossL1(data['motion_imgs'][:, 330:333, :], drec['imgs'].view(bs, height, width)[:, 330:333, :])
 
         # loss_obj_orient = 100 * self.LossL2(data['motion_imgs'][:, 333:339, :], drec['imgs'].view(bs, height, width)[:, 333:339, :])
+        loss_obj_orient = self.compute_geodesic_loss(data['motion_imgs'][:, 333:339, :].permute(0, 2, 1),
+                                                           drec['imgs'].view(bs, height, width)[:, 333:339, :].permute(0, 2, 1))
 
         # loss_obj_transl = 100 * self.LossL2(data['motion_imgs'][:, 339:, :], drec['imgs'].view(bs, height, width)[:, 339:, :])
+        loss_obj_transl = 30 * self.LossL1(data['motion_imgs'][:, 339:, :], drec['imgs'].view(bs, height, width)[:, 339:, :])
 
         q_z = torch.distributions.normal.Normal(drec['mean'], drec['std'])
         p_z = torch.distributions.normal.Normal(
@@ -156,9 +177,9 @@ class Trainer:
             'loss_kl': loss_kl,
             # 'loss_firstframe': loss_firstframe,
             # 'loss_lastframe': loss_lastframe,
-            # 'loss_root': loss_root,
-            # 'loss_obj_orient': loss_obj_orient,
-            # 'loss_obj_transl': loss_obj_transl,
+            'loss_root': loss_root,
+            'loss_obj_orient': loss_obj_orient,
+            'loss_obj_transl': loss_obj_transl,
         }
 
         loss_total = torch.stack(list(loss_dict.values())).sum()

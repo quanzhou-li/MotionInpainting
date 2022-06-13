@@ -83,7 +83,7 @@ def makelogger(log_dir,mode='w'):
 
 def CRot2rotmat(pose):
 
-    reshaped_input = pose.view(-1, 3, 2)
+    reshaped_input = pose.reshape(-1, 3, 2)
 
     b1 = F.normalize(reshaped_input[:, :, 0], dim=1)
 

@@ -9,6 +9,6 @@ python train.py --work-dir $logs \
        --inr-config config/inr-gan.yml \
        --batch-size 16 \
        --use-multigpu false \
-       --n-workers 12 \
+       --n-workers 8 \
        --n-epochs 300 \
        --lr 5e-4
