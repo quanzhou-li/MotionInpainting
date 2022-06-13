@@ -154,8 +154,8 @@ class Trainer:
         loss_dict = {
             'loss_reconstruction': loss_reconstruction,
             'loss_kl': loss_kl,
-            'loss_firstframe': loss_firstframe,
-            'loss_lastframe': loss_lastframe,
+            # 'loss_firstframe': loss_firstframe,
+            # 'loss_lastframe': loss_lastframe,
             'loss_root': loss_root,
             'loss_obj_orient': loss_obj_orient,
             'loss_obj_transl': loss_obj_transl,
