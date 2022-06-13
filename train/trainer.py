@@ -131,13 +131,13 @@ class Trainer:
 
     def loss_inr(self, data, drec):
         bs, height, width = data['motion_imgs'].shape
-        loss_reconstruction = 100 * self.LossL2(data['motion_imgs'][:, :330, :], drec['imgs'].view(bs, height, width)[:, :330, :])
+        loss_reconstruction = 100 * self.LossL2(data['motion_imgs'][:, :, :], drec['imgs'].view(bs, height, width)[:, :, :])
 
-        loss_root = 100 * self.LossL2(data['motion_imgs'][:, 330:333, :], drec['imgs'].view(bs, height, width)[:, 330:333, :])
+        # loss_root = 100 * self.LossL2(data['motion_imgs'][:, 330:333, :], drec['imgs'].view(bs, height, width)[:, 330:333, :])
 
-        loss_obj_orient = 100 * self.LossL2(data['motion_imgs'][:, 333:339, :], drec['imgs'].view(bs, height, width)[:, 333:339, :])
+        # loss_obj_orient = 100 * self.LossL2(data['motion_imgs'][:, 333:339, :], drec['imgs'].view(bs, height, width)[:, 333:339, :])
 
-        loss_obj_transl = 100 * self.LossL2(data['motion_imgs'][:, 339:, :], drec['imgs'].view(bs, height, width)[:, 339:, :])
+        # loss_obj_transl = 100 * self.LossL2(data['motion_imgs'][:, 339:, :], drec['imgs'].view(bs, height, width)[:, 339:, :])
 
         q_z = torch.distributions.normal.Normal(drec['mean'], drec['std'])
         p_z = torch.distributions.normal.Normal(
@@ -156,9 +156,9 @@ class Trainer:
             'loss_kl': loss_kl,
             # 'loss_firstframe': loss_firstframe,
             # 'loss_lastframe': loss_lastframe,
-            'loss_root': loss_root,
-            'loss_obj_orient': loss_obj_orient,
-            'loss_obj_transl': loss_obj_transl,
+            # 'loss_root': loss_root,
+            # 'loss_obj_orient': loss_obj_orient,
+            # 'loss_obj_transl': loss_obj_transl,
         }
 
         loss_total = torch.stack(list(loss_dict.values())).sum()
