@@ -86,7 +86,7 @@ class Trainer:
             fframes = data['motion_imgs'][:, :, 0]
             lframes = data['motion_imgs'][:, :, -1]
             # Generate a random mask with roughly ratio parts blank
-            ratio = 0.8
+            ratio = 0.6
             mask = self.generate_mask(bs, width, height, ratio)
             drec_inr = self.inr(data['motion_imgs']*mask, fframes, lframes, width, height)
             loss_total_inr, cur_loss_dict_inr = self.loss_inr(data, drec_inr)
