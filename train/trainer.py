@@ -125,7 +125,9 @@ class Trainer:
                 bs, height, width = data['motion_imgs'].shape
                 fframes = data['motion_imgs'][:, :, 0]
                 lframes = data['motion_imgs'][:, :, -1]
-                drec_inr = self.inr(data['motion_imgs'], fframes, lframes, width, height)
+                ratio = 1.0
+                mask = self.generate_mask(bs, width, height, ratio)
+                drec_inr = self.inr(data['motion_imgs']*ratio, fframes, lframes, width, height)
                 loss_total_inr, cur_loss_dict_inr = self.loss_inr(data, drec_inr)
                 eval_loss_dict_inr = {k: eval_loss_dict_inr.get(k, 0.0) + v.item() for k, v in
                                              cur_loss_dict_inr.items()}
