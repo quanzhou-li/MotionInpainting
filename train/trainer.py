@@ -138,7 +138,7 @@ class Trainer:
         diff = torch.bmm(rotmat1, rotmat2.permute(0, 2, 1))
         batch_trace = diff.diagonal(offset=0, dim1=-1, dim2=-2).sum(-1)  # Compute batch trace
 
-        numerator = torch.where(batch_trace>0, batch_trace-(1.+5e-7), batch_trace-(1.-1e-3))
+        numerator = torch.where(batch_trace>0, batch_trace-(1.+1e-6), batch_trace-(1.-5e-3))
         denominator = 2.
         loss = torch.acos(numerator / denominator).sum() / bs  # Add a small number to the denominator due to numerical instability
         return loss
