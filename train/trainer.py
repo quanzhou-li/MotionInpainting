@@ -81,7 +81,7 @@ class Trainer:
         for it, data in enumerate(self.ds_train):
             data = {k: data[k].to(self.device) for k in data.keys()}
             self.optimizer_inr.zero_grad()
-            data['motion_imgs'] = data['motion_imgs'][:, :333, :64]
+            data['motion_imgs'] = data['motion_imgs'][:, :330, :64]
             bs, height, width = data['motion_imgs'].shape
             fframes = data['motion_imgs'][:, :, 0]
             lframes = data['motion_imgs'][:, :, -1]
@@ -121,7 +121,7 @@ class Trainer:
         with torch.no_grad():
             for it, data in enumerate(dataset):
                 data = {k: data[k].to(self.device) for k in data.keys()}
-                data['motion_imgs'] = data['motion_imgs'][:, :333, :64]
+                data['motion_imgs'] = data['motion_imgs'][:, :330, :64]
                 bs, height, width = data['motion_imgs'].shape
                 fframes = data['motion_imgs'][:, :, 0]
                 lframes = data['motion_imgs'][:, :, -1]
@@ -179,7 +179,7 @@ class Trainer:
             'loss_kl': loss_kl,
             # 'loss_firstframe': loss_firstframe,
             # 'loss_lastframe': loss_lastframe,
-            'loss_root': loss_root,
+            # 'loss_root': loss_root,
             # 'loss_obj_orient': loss_obj_orient,
             # 'loss_obj_transl': loss_obj_transl,
         }
