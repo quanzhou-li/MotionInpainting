@@ -85,7 +85,10 @@ class Trainer:
             bs, height, width = data['motion_imgs'].shape
             fframes = data['motion_imgs'][:, :, 0]
             lframes = data['motion_imgs'][:, :, -1]
-            drec_inr = self.inr(data['motion_imgs'], fframes, lframes, width, height)
+            # Generate a random mask with roughly ratio parts blank
+            ratio = 0.8
+            mask = self.generate_mask(bs, width, height, ratio)
+            drec_inr = self.inr(data['motion_imgs']*mask, fframes, lframes, width, height)
             loss_total_inr, cur_loss_dict_inr = self.loss_inr(data, drec_inr)
 
             loss_total_inr.backward()
@@ -185,6 +188,18 @@ class Trainer:
         loss_dict['loss_total'] = loss_total
 
         return loss_total, loss_dict
+
+    def generate_mask(self, bs, width, height, ratio):
+        if self.device == torch.device("cpu"):
+            mask = torch.FloatTensor(height, width).uniform_() > ratio
+        else:
+            mask = torch.cuda.FloatTensor(height, width).uniform_() > ratio
+
+        mask[:, 0] = torch.ones(height)
+        mask[:, -1] = torch.ones(height)
+        mask = mask.repeat(bs, 1, 1)
+
+        return mask
 
     def fit(self, n_epochs=None):
         starttime = datetime.now().replace(microsecond=0)
