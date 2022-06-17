@@ -81,7 +81,7 @@ class Trainer:
         for it, data in enumerate(self.ds_train):
             data = {k: data[k].to(self.device) for k in data.keys()}
             self.optimizer_inr.zero_grad()
-            data['motion_imgs'] = data['motion_imgs'][:, :330, :64]
+            data['motion_imgs'] = data['motion_imgs'][:, :342, :64]
             bs, height, width = data['motion_imgs'].shape
             fframes = data['motion_imgs'][:, :, 0]
             lframes = data['motion_imgs'][:, :, -1]
@@ -121,13 +121,13 @@ class Trainer:
         with torch.no_grad():
             for it, data in enumerate(dataset):
                 data = {k: data[k].to(self.device) for k in data.keys()}
-                data['motion_imgs'] = data['motion_imgs'][:, :330, :64]
+                data['motion_imgs'] = data['motion_imgs'][:, :342, :64]
                 bs, height, width = data['motion_imgs'].shape
                 fframes = data['motion_imgs'][:, :, 0]
                 lframes = data['motion_imgs'][:, :, -1]
                 ratio = 1.0
                 mask = self.generate_mask(bs, width, height, ratio)
-                drec_inr = self.inr(data['motion_imgs']*ratio, fframes, lframes, width, height)
+                drec_inr = self.inr(data['motion_imgs']*mask, fframes, lframes, width, height)
                 loss_total_inr, cur_loss_dict_inr = self.loss_inr(data, drec_inr)
                 eval_loss_dict_inr = {k: eval_loss_dict_inr.get(k, 0.0) + v.item() for k, v in
                                              cur_loss_dict_inr.items()}
@@ -150,12 +150,12 @@ class Trainer:
 
     def loss_inr(self, data, drec):
         bs, height, width = data['motion_imgs'].shape
-        loss_reconstruction = 100 * self.LossL2(data['motion_imgs'][:, :330, :], drec['imgs'].view(bs, height, width)[:, :330, :])
+        loss_reconstruction = 100 * self.LossL2(data['motion_imgs'][:, :342, :], drec['imgs'].view(bs, height, width)[:, :342, :])
         # loss_reconstruction = self.compute_geodesic_loss(data['motion_imgs'][:, :330, :].permute(0, 2, 1),
         #                                                        drec['imgs'].view(bs, height, width)[:, :330, :].permute(0, 2, 1))
 
         # loss_root = 100 * self.LossL2(data['motion_imgs'][:, 330:333, :], drec['imgs'].view(bs, height, width)[:, 330:333, :])
-        loss_root = 100 * self.LossL1(data['motion_imgs'][:, 330:333, :], drec['imgs'].view(bs, height, width)[:, 330:333, :])
+        # loss_root = 100 * self.LossL1(data['motion_imgs'][:, 330:333, :], drec['imgs'].view(bs, height, width)[:, 330:333, :])
 
         # loss_obj_orient = 100 * self.LossL2(data['motion_imgs'][:, 333:339, :], drec['imgs'].view(bs, height, width)[:, 333:339, :])
         # loss_obj_orient = self.compute_geodesic_loss(data['motion_imgs'][:, 333:339, :].permute(0, 2, 1),
