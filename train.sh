@@ -12,6 +12,6 @@ python train.py --work-dir $logs \
        --batch-size 16 \
        --use-multigpu false \
        --n-workers 8 \
-       --n-epochs 300 \
+       --n-epochs 500 \
        --lr 5e-4 \
        --best-model $model
