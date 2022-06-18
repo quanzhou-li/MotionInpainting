@@ -3,6 +3,8 @@
 echo Enter the path to logs
 # shellcheck disable=SC2162
 read -p 'Path: ' logs
+echo Enter the path to the best model
+read -p 'Path: ' model
 
 python train.py --work-dir $logs \
        --data-path datasets_parsed_motion_inpaint_64with_object/ \
@@ -12,4 +14,4 @@ python train.py --work-dir $logs \
        --n-workers 8 \
        --n-epochs 300 \
        --lr 5e-4 \
-       --best-model
+       --best-model $model
