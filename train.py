@@ -47,6 +47,9 @@ if __name__=='__main__':
                         type=lambda arg: arg.lower() in ['true', '1'],
                         help='If to use multiple GPUs for training')
 
+    parser.add_argument('--best-model', default=None, type=str,
+                        help='path to the best model')
+
     args = parser.parse_args()
 
     work_dir = args.work_dir
@@ -61,6 +64,7 @@ if __name__=='__main__':
     ds_train = args.train_data
     ds_val = args.val_data
     inr_config = args.inr_config
+    best_model = args.best_model
 
     cfg = {
         'work_dir': work_dir,
@@ -76,7 +80,7 @@ if __name__=='__main__':
         'base_lr': base_lr,
         'n_epochs': n_epochs,
         'save_every_it': 10,
-        'best_motionFill': None,
+        'best_model': best_model,
         'try_num': 0,
         'reg_coef': 5e-4
     }

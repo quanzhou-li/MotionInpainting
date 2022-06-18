@@ -71,6 +71,9 @@ class Trainer:
         self.best_loss_inr = np.inf
         self.cfg = cfg
 
+        if cfg.best_model is not None:
+            self.inr.load_state_dict(torch.load(cfg.best_model, map_location=self.device))
+
     def train(self):
 
         self.inr.train()

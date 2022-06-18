@@ -11,4 +11,5 @@ python train.py --work-dir $logs \
        --use-multigpu false \
        --n-workers 8 \
        --n-epochs 300 \
-       --lr 5e-4
+       --lr 5e-4 \
+       --best-model
