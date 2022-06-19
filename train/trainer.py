@@ -157,15 +157,15 @@ class Trainer:
         # loss_reconstruction = self.compute_geodesic_loss(data['motion_imgs'][:, :330, :].permute(0, 2, 1),
         #                                                        drec['imgs'].view(bs, height, width)[:, :330, :].permute(0, 2, 1))
 
-        # loss_root = 100 * self.LossL2(data['motion_imgs'][:, 330:333, :], drec['imgs'].view(bs, height, width)[:, 330:333, :])
-        loss_root = 40 * self.LossL1(data['motion_imgs'][:, 330:333, :], drec['imgs'].view(bs, height, width)[:, 330:333, :])
+        loss_root = 100 * self.LossL2(data['motion_imgs'][:, 330:333, :], drec['imgs'].view(bs, height, width)[:, 330:333, :])
+        # loss_root = 40 * self.LossL1(data['motion_imgs'][:, 330:333, :], drec['imgs'].view(bs, height, width)[:, 330:333, :])
 
         loss_obj_orient = 100 * self.LossL2(data['motion_imgs'][:, 333:339, :], drec['imgs'].view(bs, height, width)[:, 333:339, :])
         # loss_obj_orient = self.compute_geodesic_loss(data['motion_imgs'][:, 333:339, :].permute(0, 2, 1),
         #                                                    drec['imgs'].view(bs, height, width)[:, 333:339, :].permute(0, 2, 1))
 
-        # loss_obj_transl = 100 * self.LossL2(data['motion_imgs'][:, 339:, :], drec['imgs'].view(bs, height, width)[:, 339:, :])
-        loss_obj_transl = 40 * self.LossL1(data['motion_imgs'][:, 339:, :], drec['imgs'].view(bs, height, width)[:, 339:, :])
+        loss_obj_transl = 100 * self.LossL2(data['motion_imgs'][:, 339:, :], drec['imgs'].view(bs, height, width)[:, 339:, :])
+        # loss_obj_transl = 40 * self.LossL1(data['motion_imgs'][:, 339:, :], drec['imgs'].view(bs, height, width)[:, 339:, :])
 
         q_z = torch.distributions.normal.Normal(drec['mean'], drec['std'])
         p_z = torch.distributions.normal.Normal(
