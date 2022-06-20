@@ -11,7 +11,7 @@ python train.py --work-dir $logs \
        --inr-config config/inr-gan.yml \
        --batch-size 16 \
        --use-multigpu false \
-       --n-workers 8 \
-       --n-epochs 500 \
+       --n-workers 4 \
+       --n-epochs 1000 \
        --lr 5e-4 \
-       --best-model $model
+       # --best-model $model
