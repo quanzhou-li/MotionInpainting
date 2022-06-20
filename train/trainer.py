@@ -151,11 +151,21 @@ class Trainer:
         loss = torch.acos(numerator / denominator).sum() / bs  # Add a small number to the denominator due to numerical instability
         return loss
 
+    def compute_variation_Loss(self, img, weight):
+        bs, h, w = img.shape
+        # tv_h = torch.pow(img[:, 1:, :]-img[:, :-1, :], 2).sum()
+        tv_w = torch.pow(img[:, :, 1:]-img[:, :, :-1], 2).sum()
+        # return weight * (tv_h + tv_w) / (bs * h * w)
+        return weight * tv_w / (bs * w)
+
     def loss_inr(self, data, drec):
         bs, height, width = data['motion_imgs'].shape
+        tv_weight = 1e-2
+
         loss_reconstruction = 100 * self.LossL2(data['motion_imgs'][:, :330, :], drec['imgs'].view(bs, height, width)[:, :330, :])
         # loss_reconstruction = self.compute_geodesic_loss(data['motion_imgs'][:, :330, :].permute(0, 2, 1),
         #                                                        drec['imgs'].view(bs, height, width)[:, :330, :].permute(0, 2, 1))
+        loss_tv_pose = self.compute_variation_Loss(drec['imgs'].view(bs, height, width)[:, :330, :], tv_weight)
 
         # loss_root = 100 * self.LossL2(data['motion_imgs'][:, 330:333, :], drec['imgs'].view(bs, height, width)[:, 330:333, :])
         # loss_root = 40 * self.LossL1(data['motion_imgs'][:, 330:333, :], drec['imgs'].view(bs, height, width)[:, 330:333, :])
@@ -187,6 +197,7 @@ class Trainer:
             # 'loss_root': loss_root,
             # 'loss_obj_orient': loss_obj_orient,
             # 'loss_obj_transl': loss_obj_transl,
+            'loss_tv_pose': loss_tv_pose,
         }
 
         loss_total = torch.stack(list(loss_dict.values())).sum()
