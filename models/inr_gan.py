@@ -64,7 +64,7 @@ class INRGenerator(nn.Module):
 
         self.frame_D = 330
         self.latent_D = 512
-        self.dim_z = 2 * self.latent_D
+        self.dim_z = 512
         self.fframe_enc = ResBlock(self.frame_D, self.latent_D)
         self.lframe_enc = ResBlock(self.frame_D, self.latent_D)
 
