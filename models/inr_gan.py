@@ -76,8 +76,8 @@ class INRGenerator(nn.Module):
         self.init_model()
 
     def init_model(self):
-        # input_dim = self.latent_D * 2 + self.dim_z
-        input_dim = self.dim_z  # Test without first and last frame vectors
+        input_dim = self.latent_D * 2 + self.dim_z
+        # input_dim = self.dim_z  # Test without first and last frame vectors
         self.class_embedder = nn.Identity()
         self.size_sampler = nn.Identity()
 
@@ -102,8 +102,8 @@ class INRGenerator(nn.Module):
 
         z = dist.rsample()
         feat = torch.cat([z, feat_fframe, feat_lframe], dim=1)
-        # inrs_weights = self.compute_model_forward(feat)
-        inrs_weights = self.compute_model_forward(z)  # Test without first and last frames
+        inrs_weights = self.compute_model_forward(feat)
+        # inrs_weights = self.compute_model_forward(z)  # Test without first and last frames
 
         imgs = self.forward_for_weights(inrs_weights, width, height)
         results = {'mean': dist.mean, 'std': dist.scale, 'imgs': imgs}
@@ -114,8 +114,8 @@ class INRGenerator(nn.Module):
         feat_fframe = self.fframe_enc(first_frame)
         feat_lframe = self.lframe_enc(last_frame)
         feat = torch.cat([z, feat_fframe, feat_lframe], dim=1)
-        # inrs_weights = self.compute_model_forward(feat)
-        inrs_weights = self.compute_model_forward(z)  # Test without first and last frames
+        inrs_weights = self.compute_model_forward(feat)
+        # inrs_weights = self.compute_model_forward(z)  # Test without first and last frames
 
         return {'imgs': self.forward_for_weights(inrs_weights, width, height)}
 
