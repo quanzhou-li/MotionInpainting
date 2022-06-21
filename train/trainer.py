@@ -182,7 +182,7 @@ class Trainer:
 
         q_z = torch.distributions.normal.Normal(drec['mean'], drec['std'])
         p_z = torch.distributions.normal.Normal(
-            loc=torch.tensor(np.zeros([bs, 512]), requires_grad=False).to(
+            loc=torch.tensor(np.zeros([bs, 1024]), requires_grad=False).to(
                 self.device).type(self.dtype),
             scale=torch.tensor(np.ones([bs, 512]), requires_grad=False).to(
                 self.device).type(self.dtype)
