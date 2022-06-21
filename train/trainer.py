@@ -200,7 +200,7 @@ class Trainer:
             # 'loss_root': loss_root,
             # 'loss_obj_orient': loss_obj_orient,
             # 'loss_obj_transl': loss_obj_transl,
-            # 'loss_tv_pose': loss_tv_pose,
+            'loss_tv_pose': loss_tv_pose,
             # 'loss_tv_root': loss_tv_root,
             # 'loss_tv_obj_orient': loss_tv_obj_orient,
             # 'loss_tv_obj_transl': loss_tv_obj_transl,
