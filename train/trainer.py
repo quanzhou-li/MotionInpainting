@@ -169,16 +169,16 @@ class Trainer:
 
         # loss_root = 100 * self.LossL2(data['motion_imgs'][:, 330:333, :], drec['imgs'].view(bs, height, width)[:, 330:333, :])
         loss_root = 30 * self.LossL1(data['motion_imgs'][:, 330:333, :], drec['imgs'].view(bs, height, width)[:, 330:333, :])
-        # loss_tv_root = self.compute_variation_Loss(drec['imgs'].view(bs, height, width)[:, 330:333, :], tv_weight)
+        loss_tv_root = self.compute_variation_Loss(drec['imgs'].view(bs, height, width)[:, 330:333, :], tv_weight)
 
         loss_obj_orient = 100 * self.LossL2(data['motion_imgs'][:, 333:339, :], drec['imgs'].view(bs, height, width)[:, 333:339, :])
         # loss_obj_orient = self.compute_geodesic_loss(data['motion_imgs'][:, 333:339, :].permute(0, 2, 1),
         #                                                    drec['imgs'].view(bs, height, width)[:, 333:339, :].permute(0, 2, 1))
-        # loss_tv_obj_orient = self.compute_variation_Loss(drec['imgs'].view(bs, height, width)[:, 333:339, :], tv_weight)
+        loss_tv_obj_orient = self.compute_variation_Loss(drec['imgs'].view(bs, height, width)[:, 333:339, :], tv_weight)
 
         # loss_obj_transl = 100 * self.LossL2(data['motion_imgs'][:, 339:, :], drec['imgs'].view(bs, height, width)[:, 339:, :])
         loss_obj_transl = 30 * self.LossL1(data['motion_imgs'][:, 339:, :], drec['imgs'].view(bs, height, width)[:, 339:, :])
-        # loss_tv_obj_transl = self.compute_variation_Loss(drec['imgs'].view(bs, height, width)[:, 339:, :], tv_weight)
+        loss_tv_obj_transl = self.compute_variation_Loss(drec['imgs'].view(bs, height, width)[:, 339:, :], tv_weight)
 
         q_z = torch.distributions.normal.Normal(drec['mean'], drec['std'])
         p_z = torch.distributions.normal.Normal(
@@ -200,10 +200,10 @@ class Trainer:
             'loss_root': loss_root,
             'loss_obj_orient': loss_obj_orient,
             'loss_obj_transl': loss_obj_transl,
-            # 'loss_tv_pose': loss_tv_pose,
-            # 'loss_tv_root': loss_tv_root,
-            # 'loss_tv_obj_orient': loss_tv_obj_orient,
-            # 'loss_tv_obj_transl': loss_tv_obj_transl,
+            'loss_tv_pose': loss_tv_pose,
+            'loss_tv_root': loss_tv_root,
+            'loss_tv_obj_orient': loss_tv_obj_orient,
+            'loss_tv_obj_transl': loss_tv_obj_transl,
         }
 
         loss_total = torch.stack(list(loss_dict.values())).sum()
