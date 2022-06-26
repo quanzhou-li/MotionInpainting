@@ -62,14 +62,15 @@ class INRGenerator(nn.Module):
         self.inr = FourierINRs(self.config)
         # self.inr = FourierINRs(self.config)
 
-        self.frame_D = 342
+        self.frame_D = 330
         self.latent_D = 512
         self.dim_z = 1024
         self.fframe_enc = ResBlock(self.frame_D, self.latent_D)
         self.lframe_enc = ResBlock(self.frame_D, self.latent_D)
 
         self.width, self.height = 64, self.frame_D
-        self.img_enc = ResBlock(self.width * self.height, self.dim_z)
+        # self.img_enc = ResBlock(self.width * self.height, self.dim_z)
+        self.feat_enc = ResBlock(self.latent_D * 2, self.dim_z)
         self.enc_mu = nn.Linear(self.dim_z, self.dim_z)
         self.enc_var = nn.Linear(self.dim_z, self.dim_z)
 
@@ -92,13 +93,16 @@ class INRGenerator(nn.Module):
             *[INRGeneratorBlock(dims[i], dims[i + 1], True, is_first_layer=(i == 0)) for i in range(len(dims) - 2)])
         self.connector = nn.Linear(dims[-2], dims[-1])
 
-    def forward(self, img: Tensor, first_frame: Tensor, last_frame: Tensor, width: int, height: int) -> Dict[
+    # def forward(self, img: Tensor, first_frame: Tensor, last_frame: Tensor, width: int, height: int) -> Dict[
+    def forward(self, first_frame: Tensor, last_frame: Tensor, width: int, height: int) -> Dict[
         str, Union[Union[Tensor, float], Any]]:
         feat_fframe = self.fframe_enc(first_frame)
         feat_lframe = self.lframe_enc(last_frame)
-        bs = img.shape[0]
-        feat_img = self.img_enc(img.reshape(bs, self.width * self.height))
-        dist = torch.distributions.normal.Normal(self.enc_mu(feat_img), F.softplus(self.enc_var(feat_img)))
+        # bs = img.shape[0]
+        # feat_img = self.img_enc(img.reshape(bs, self.width * self.height))
+        # dist = torch.distributions.normal.Normal(self.enc_mu(feat_img), F.softplus(self.enc_var(feat_img)))
+        feat_fl = self.feat_enc(torch.cat([feat_fframe, feat_lframe], dim=1))
+        dist = torch.distributions.normal.Normal(self.enc_mu(feat_fl), F.softplus(self.enc_var(feat_fl)))
 
         z = dist.rsample()
         feat = torch.cat([z, feat_fframe, feat_lframe], dim=1)
