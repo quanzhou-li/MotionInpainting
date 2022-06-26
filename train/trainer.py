@@ -258,7 +258,7 @@ class Trainer:
                                                            epoch_num=self.epochs_completed, it=len(self.ds_val),
                                                            model_name='Motion Infilling',
                                                            try_num=self.try_num, mode='evald')
-                    if eval_loss_dict_inr['loss_total'] < self.best_loss_inr and epoch_num > 200:
+                    if eval_loss_dict_inr['loss_total'] < self.best_loss_inr and epoch_num > 50:
                         self.cfg.best_inr = makepath(os.path.join(self.cfg.work_dir, 'snapshots',
                                                                          'TR%02d_E%04d_inr.pt' % (
                                                                              self.try_num, self.epochs_completed)),
