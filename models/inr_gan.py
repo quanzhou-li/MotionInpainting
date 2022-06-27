@@ -62,7 +62,7 @@ class INRGenerator(nn.Module):
         self.inr = FourierINRs(self.config)
         # self.inr = FourierINRs(self.config)
 
-        self.frame_D = 342
+        self.frame_D = 330
         self.latent_D = 512
         self.dim_z = 1024
         self.fframe_enc = ResBlock(self.frame_D, self.latent_D)
@@ -70,15 +70,16 @@ class INRGenerator(nn.Module):
 
         self.width, self.height = 64, self.frame_D
         self.img_enc = ResBlock(self.width * self.height, self.dim_z)
-        self.feat_enc = ResBlock(self.latent_D * 2, self.dim_z)
+        self.rb1 = ResBlock(self.latent_D * 2, 2 * self.dim_z)
+        self.rb2 = ResBlock(2 * self.dim_z, self.dim_z)
         self.enc_mu = nn.Linear(self.dim_z, self.dim_z)
         self.enc_var = nn.Linear(self.dim_z, self.dim_z)
 
         self.init_model()
 
     def init_model(self):
-        input_dim = self.latent_D * 2 + self.dim_z
-        # input_dim = self.dim_z  # Test without first and last frame vectors
+        # input_dim = self.latent_D * 2 + self.dim_z
+        input_dim = self.dim_z  # Test without first and last frame vectors
         self.class_embedder = nn.Identity()
         self.size_sampler = nn.Identity()
 
@@ -98,16 +99,17 @@ class INRGenerator(nn.Module):
         str, Union[Union[Tensor, float], Any]]:
         feat_fframe = self.fframe_enc(first_frame)
         feat_lframe = self.lframe_enc(last_frame)
-        bs = img.shape[0]
-        feat_img = self.img_enc(img.reshape(bs, self.width * self.height))
-        dist = torch.distributions.normal.Normal(self.enc_mu(feat_img), F.softplus(self.enc_var(feat_img)))
-        # feat_fl = self.feat_enc(torch.cat([feat_fframe, feat_lframe], dim=1))
-        # dist = torch.distributions.normal.Normal(self.enc_mu(feat_fl), F.softplus(self.enc_var(feat_fl)))
+        # bs = img.shape[0]
+        # feat_img = self.img_enc(img.reshape(bs, self.width * self.height))
+        # dist = torch.distributions.normal.Normal(self.enc_mu(feat_img), F.softplus(self.enc_var(feat_img)))
+        feat_fl = self.rb1(torch.cat([feat_fframe, feat_lframe], dim=1))
+        feat_fl = self.rb2(feat_fl)
+        dist = torch.distributions.normal.Normal(self.enc_mu(feat_fl), F.softplus(self.enc_var(feat_fl)))
 
         z = dist.rsample()
         feat = torch.cat([z, feat_fframe, feat_lframe], dim=1)
-        inrs_weights = self.compute_model_forward(feat)
-        # inrs_weights = self.compute_model_forward(z)  # Test without first and last frames
+        # inrs_weights = self.compute_model_forward(feat)
+        inrs_weights = self.compute_model_forward(z)  # Test without first and last frames
 
         imgs = self.forward_for_weights(inrs_weights, width, height)
         results = {'mean': dist.mean, 'std': dist.scale, 'imgs': imgs}
