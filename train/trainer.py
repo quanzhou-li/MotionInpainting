@@ -97,7 +97,7 @@ class Trainer:
 
             loss_total_inr.backward()
 
-            torch.nn.utils.clip_grad_value_(self.inr.parameters(), 2)
+            torch.nn.utils.clip_grad_value_(self.inr.parameters(), 5)
             self.optimizer_inr.step()
 
             train_loss_dict_inr = {k: train_loss_dict_inr.get(k, 0.0) + v.item() for k, v in
