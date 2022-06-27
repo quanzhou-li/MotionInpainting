@@ -165,7 +165,6 @@ class INRGeneratorBlock(nn.Module):
         super().__init__()
 
         layers = [nn.Linear(in_features, out_features)]
-        layers.append(nn.BatchNorm1d(out_features))
 
         if in_features == out_features and residual and not is_first_layer:
             self.residual = True
