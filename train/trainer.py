@@ -120,7 +120,8 @@ class Trainer:
 
         eval_loss_dict_inr = {}
 
-        dataset = self.ds_val
+        # dataset = self.ds_val
+        dataset = self.ds_train
 
         with torch.no_grad():
             for it, data in enumerate(dataset):
@@ -189,7 +190,7 @@ class Trainer:
             scale=torch.tensor(np.ones([bs, 1024]), requires_grad=False).to(
                 self.device).type(self.dtype)
         )
-        loss_kl = 1 * 0.005 * torch.mean(torch.sum(torch.distributions.kl.kl_divergence(q_z, p_z)))
+        loss_kl = 10 * 0.005 * torch.mean(torch.sum(torch.distributions.kl.kl_divergence(q_z, p_z)))
 
         # loss_firstframe = 60 * self.LossL2(data['motion_imgs'][:, :, 0], drec['imgs'].view(bs, height, width)[:, :, 0])
         # loss_lastframe = 60 * self.LossL2(data['motion_imgs'][:, :, -1], drec['imgs'].view(bs, height, width)[:, :, -1])
