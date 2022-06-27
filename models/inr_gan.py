@@ -78,8 +78,8 @@ class INRGenerator(nn.Module):
         self.init_model()
 
     def init_model(self):
-        input_dim = self.latent_D * 2 + self.dim_z
-        # input_dim = self.dim_z  # Test without first and last frame vectors
+        # input_dim = self.latent_D * 2 + self.dim_z
+        input_dim = self.dim_z  # Test without first and last frame vectors
         self.class_embedder = nn.Identity()
         self.size_sampler = nn.Identity()
 
@@ -92,8 +92,8 @@ class INRGenerator(nn.Module):
 
         self.mapping_network = nn.Sequential(
             *[INRGeneratorBlock(dims[i], dims[i + 1], True, is_first_layer=(i == 0)) for i in range(len(dims) - 2)])
-        self.connector = nn.Linear(dims[-2], dims[-1])
-        # self.connector = ResBlock(dims[-2], dims[-1])
+        # self.connector = nn.Linear(dims[-2], dims[-1])
+        self.connector = ResBlock(dims[-2], dims[-1])
 
     def forward(self, img: Tensor, first_frame: Tensor, last_frame: Tensor, width: int, height: int) -> Dict[
     # def forward(self, first_frame: Tensor, last_frame: Tensor, width: int, height: int) -> Dict[
@@ -108,9 +108,9 @@ class INRGenerator(nn.Module):
         dist = torch.distributions.normal.Normal(self.enc_mu(feat_fl), F.softplus(self.enc_var(feat_fl)))
 
         z = dist.rsample()
-        feat = torch.cat([z, feat_fframe, feat_lframe], dim=1)
-        inrs_weights = self.compute_model_forward(feat)
-        # inrs_weights = self.compute_model_forward(z)  # Test without first and last frames
+        # feat = torch.cat([z, feat_fframe, feat_lframe], dim=1)
+        # inrs_weights = self.compute_model_forward(feat)
+        inrs_weights = self.compute_model_forward(z)  # Test without first and last frames
 
         imgs = self.forward_for_weights(inrs_weights, width, height)
         results = {'mean': dist.mean, 'std': dist.scale, 'imgs': imgs}
