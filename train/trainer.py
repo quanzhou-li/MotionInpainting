@@ -120,7 +120,7 @@ class Trainer:
 
         eval_loss_dict_inr = {}
 
-        dataset = self.ds_train
+        dataset = self.ds_val
 
         with torch.no_grad():
             for it, data in enumerate(dataset):
