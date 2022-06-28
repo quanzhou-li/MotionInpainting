@@ -90,15 +90,15 @@ class Trainer:
             lframes = data['motion_imgs'][:, :, -1]
             # Generate a random mask with roughly ratio parts blank
             ratio = 1.0
-            # mask = self.generate_mask(bs, width, height, ratio)
-            # drec_inr = self.inr(data['motion_imgs']*mask, fframes, lframes, width, height, self.device)
+            mask = self.generate_mask(bs, width, height, ratio)
+            drec_inr = self.inr(data['motion_imgs']*mask, fframes, lframes, width, height, self.device)
             # drec_inr = self.inr(fframes, lframes, width, height)
-            tmp_img = torch.zeros(bs, height, width+2).to(self.device)
+            '''tmp_img = torch.zeros(bs, height, width+2).to(self.device)
             tmp_img[:, :, 0] = fframes
             tmp_img[:, :, -1] = lframes
             tmp_img[:, :, 1:-1] = data['motion_imgs']
             mask = self.generate_mask(bs, width + 2, height, ratio)
-            drec_inr = self.inr(tmp_img*mask, fframes, lframes, width, height, self.device)
+            drec_inr = self.inr(tmp_img*mask, fframes, lframes, width, height, self.device)'''
 
             loss_total_inr, cur_loss_dict_inr = self.loss_inr(data, drec_inr)
 
@@ -140,15 +140,15 @@ class Trainer:
                 fframes = data['motion_imgs'][:, :, 0]
                 lframes = data['motion_imgs'][:, :, -1]
                 ratio = 1.0
-                # mask = self.generate_mask(bs, width, height, ratio)
-                # drec_inr = self.inr(data['motion_imgs']*mask, fframes, lframes, width, height, self.device)
+                mask = self.generate_mask(bs, width, height, ratio)
+                drec_inr = self.inr(data['motion_imgs']*mask, fframes, lframes, width, height, self.device)
                 # drec_inr = self.inr(fframes, lframes, width, height)
-                tmp_img = torch.zeros(bs, height, width+2).to(self.device)
+                '''tmp_img = torch.zeros(bs, height, width+2).to(self.device)
                 tmp_img[:, :, 0] = fframes
                 tmp_img[:, :, -1] = lframes
                 tmp_img[:, :, 1:-1] = data['motion_imgs']
                 mask = self.generate_mask(bs, width + 2, height, ratio)
-                drec_inr = self.inr(tmp_img*mask, fframes, lframes, width, height, self.device)
+                drec_inr = self.inr(tmp_img*mask, fframes, lframes, width, height, self.device)'''
                 loss_total_inr, cur_loss_dict_inr = self.loss_inr(data, drec_inr)
                 eval_loss_dict_inr = {k: eval_loss_dict_inr.get(k, 0.0) + v.item() for k, v in
                                              cur_loss_dict_inr.items()}
