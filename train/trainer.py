@@ -185,21 +185,21 @@ class Trainer:
         # loss_obj_transl = 30 * self.LossL1(data['motion_imgs'][:, 339:, :], drec['imgs'].view(bs, height, width)[:, 339:, :])
         # loss_tv_obj_transl = self.compute_variation_Loss(drec['imgs'].view(bs, height, width)[:, 339:, :], tv_weight)
 
-        q_z = torch.distributions.normal.Normal(drec['mean'], drec['std'])
+        '''q_z = torch.distributions.normal.Normal(drec['mean'], drec['std'])
         p_z = torch.distributions.normal.Normal(
             loc=torch.tensor(np.zeros([bs, 1024]), requires_grad=False).to(
                 self.device).type(self.dtype),
             scale=torch.tensor(np.ones([bs, 1024]), requires_grad=False).to(
                 self.device).type(self.dtype)
         )
-        loss_kl = 10 * 0.005 * torch.mean(torch.sum(torch.distributions.kl.kl_divergence(q_z, p_z)))
+        loss_kl = 10 * 0.005 * torch.mean(torch.sum(torch.distributions.kl.kl_divergence(q_z, p_z)))'''
 
         # loss_firstframe = 60 * self.LossL2(data['motion_imgs'][:, :, 0], drec['imgs'].view(bs, height, width)[:, :, 0])
         # loss_lastframe = 60 * self.LossL2(data['motion_imgs'][:, :, -1], drec['imgs'].view(bs, height, width)[:, :, -1])
 
         loss_dict = {
             'loss_reconstruction': loss_reconstruction,
-            'loss_kl': loss_kl,
+            # 'loss_kl': loss_kl,
             # 'loss_firstframe': loss_firstframe,
             # 'loss_lastframe': loss_lastframe,
             # 'loss_root': loss_root,
