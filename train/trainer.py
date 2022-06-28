@@ -93,7 +93,7 @@ class Trainer:
             # mask = self.generate_mask(bs, width, height, ratio)
             # drec_inr = self.inr(data['motion_imgs']*mask, fframes, lframes, width, height, self.device)
             # drec_inr = self.inr(fframes, lframes, width, height)
-            tmp_img = torch.zeros(bs, height, width+2)
+            tmp_img = torch.zeros(bs, height, width+2).to(self.device)
             tmp_img[:, :, 0] = fframes
             tmp_img[:, :, -1] = lframes
             tmp_img[:, :, 1:-1] = data['motion_imgs']
