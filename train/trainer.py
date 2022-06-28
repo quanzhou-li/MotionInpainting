@@ -194,14 +194,14 @@ class Trainer:
         )
         loss_kl = 10 * 0.005 * torch.mean(torch.sum(torch.distributions.kl.kl_divergence(q_z, p_z)))
 
-        # loss_firstframe = 60 * self.LossL2(data['motion_imgs'][:, :, 0], drec['imgs'].view(bs, height, width)[:, :, 0])
-        # loss_lastframe = 60 * self.LossL2(data['motion_imgs'][:, :, -1], drec['imgs'].view(bs, height, width)[:, :, -1])
+        loss_firstframe = 60 * self.LossL1(data['motion_imgs'][:, :, 0], drec['imgs'].view(bs, height, width)[:, :, 0])
+        loss_lastframe = 60 * self.LossL1(data['motion_imgs'][:, :, -1], drec['imgs'].view(bs, height, width)[:, :, -1])
 
         loss_dict = {
             'loss_reconstruction': loss_reconstruction,
             'loss_kl': loss_kl,
-            # 'loss_firstframe': loss_firstframe,
-            # 'loss_lastframe': loss_lastframe,
+            'loss_firstframe': loss_firstframe,
+            'loss_lastframe': loss_lastframe,
             # 'loss_root': loss_root,
             # 'loss_obj_orient': loss_obj_orient,
             # 'loss_obj_transl': loss_obj_transl,
