@@ -102,14 +102,14 @@ class INRGenerator(nn.Module):
         str, Union[Union[Tensor, float], Any]]:
         feat_fframe = self.fframe_enc(first_frame)
         feat_lframe = self.lframe_enc(last_frame)
-        # bs = img.shape[0]
-        # feat_img = self.img_enc(img.reshape(bs, self.width * self.height))
-        # dist = torch.distributions.normal.Normal(self.enc_mu(feat_img), F.softplus(self.enc_var(feat_img)))
+        bs = img.shape[0]
+        feat_img = self.img_enc(img.reshape(bs, self.width * self.height))
+        dist = torch.distributions.normal.Normal(self.enc_mu(feat_img), F.softplus(self.enc_var(feat_img)))
         # feat_fl = self.rb1(torch.cat([feat_fframe, feat_lframe], dim=1))
         # feat_fl = self.rb2(feat_fl)
         # dist = torch.distributions.normal.Normal(self.enc_mu(feat_fl), F.softplus(self.enc_var(feat_fl)))
 
-        batch_size = first_frame.shape[0]
+        '''batch_size = first_frame.shape[0]
         if self.dist is None:
             self.dist = torch.distributions.normal.Normal(
                 loc=torch.tensor(np.zeros([batch_size, 1024]), requires_grad=False),
@@ -120,25 +120,31 @@ class INRGenerator(nn.Module):
         feat_content = self.rb2(feat_content)
         feat_content = self.rb3(feat_content)
         feat = torch.cat([feat_fframe, feat_content, feat_lframe], dim=1)
-        inrs_weights = self.compute_model_forward(feat)
+        inrs_weights = self.compute_model_forward(feat)'''
 
-        # z = dist.rsample()
-        # feat = torch.cat([z, feat_fframe, feat_lframe], dim=1)
-        # inrs_weights = self.compute_model_forward(feat)
+        z = dist.rsample()
+        feat = torch.cat([z, feat_fframe, feat_lframe], dim=1)
+        inrs_weights = self.compute_model_forward(feat)
         # inrs_weights = self.compute_model_forward(z)  # Test without first and last frames
 
         imgs = self.forward_for_weights(inrs_weights, width, height)
-        # results = {'mean': dist.mean, 'std': dist.scale, 'imgs': imgs}
-        results = {'imgs': imgs}
+        results = {'mean': dist.mean, 'std': dist.scale, 'imgs': imgs}
+        # results = {'imgs': imgs}
 
         return results
 
     def decode(self, z: Tensor, first_frame: Tensor, last_frame: Tensor, width: int, height: int) -> Dict[str, Tensor]:
         feat_fframe = self.fframe_enc(first_frame)
         feat_lframe = self.lframe_enc(last_frame)
-        feat = torch.cat([z, feat_fframe, feat_lframe], dim=1)
-        inrs_weights = self.compute_model_forward(feat)
+        # feat = torch.cat([z, feat_fframe, feat_lframe], dim=1)
+        # inrs_weights = self.compute_model_forward(feat)
         # inrs_weights = self.compute_model_forward(z)  # Test without first and last frames
+
+        feat_content = self.rb1(z)
+        feat_content = self.rb2(feat_content)
+        feat_content = self.rb3(feat_content)
+        feat = torch.cat([feat_fframe, feat_content, feat_lframe], dim=1)
+        inrs_weights = self.compute_model_forward(feat)
 
         return {'imgs': self.forward_for_weights(inrs_weights, width, height)}
 
