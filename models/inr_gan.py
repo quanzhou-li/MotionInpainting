@@ -115,7 +115,7 @@ class INRGenerator(nn.Module):
                 loc=torch.tensor(np.zeros([batch_size, 1024]), requires_grad=False),
                 scale=torch.tensor(np.ones([batch_size, 1024]), requires_grad=False)
             )
-        z_s = self.dist.rsample().float()
+        z_s = self.dist.rsample()
         feat_content = self.rb1(z_s)
         feat_content = self.rb2(feat_content)
         feat_content = self.rb3(feat_content)
