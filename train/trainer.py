@@ -91,7 +91,7 @@ class Trainer:
             # Generate a random mask with roughly ratio parts blank
             ratio = 1.0
             mask = self.generate_mask(bs, width, height, ratio)
-            drec_inr = self.inr(data['motion_imgs']*mask, fframes, lframes, width, height)
+            drec_inr = self.inr(data['motion_imgs']*mask, fframes, lframes, width, height, self.device)
             # drec_inr = self.inr(fframes, lframes, width, height)
             loss_total_inr, cur_loss_dict_inr = self.loss_inr(data, drec_inr)
 
@@ -134,7 +134,7 @@ class Trainer:
                 lframes = data['motion_imgs'][:, :, -1]
                 ratio = 1.0
                 mask = self.generate_mask(bs, width, height, ratio)
-                drec_inr = self.inr(data['motion_imgs']*mask, fframes, lframes, width, height)
+                drec_inr = self.inr(data['motion_imgs']*mask, fframes, lframes, width, height, self.device)
                 # drec_inr = self.inr(fframes, lframes, width, height)
                 loss_total_inr, cur_loss_dict_inr = self.loss_inr(data, drec_inr)
                 eval_loss_dict_inr = {k: eval_loss_dict_inr.get(k, 0.0) + v.item() for k, v in
