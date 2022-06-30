@@ -180,22 +180,22 @@ class Trainer:
         bs, height, width = data['motion_imgs'].shape
         tv_weight = 1e-3
 
-        loss_reconstruction = 100 * self.LossL2(data['motion_imgs'][:, :330, :], drec['imgs'].view(bs, height, width)[:, :330, :])
+        loss_reconstruction = 100 * self.LossL2(data['motion_imgs'][:, :330, :], drec['imgs'][:, :330, :])
         # loss_reconstruction = self.compute_geodesic_loss(data['motion_imgs'][:, :330, :].permute(0, 2, 1),
-        #                                                        drec['imgs'].view(bs, height, width)[:, :330, :].permute(0, 2, 1))
-        loss_tv_pose = self.compute_variation_Loss(drec['imgs'].view(bs, height, width)[:, :330, :], tv_weight)
+        #                                                        drec['imgs'][:, :330, :].permute(0, 2, 1))
+        loss_tv_pose = self.compute_variation_Loss(drec['imgs'][:, :330, :], tv_weight)
 
-        # loss_root = 100 * self.LossL2(data['motion_imgs'][:, 330:333, :], drec['imgs'].view(bs, height, width)[:, 330:333, :])
-        # loss_root = 30 * self.LossL1(data['motion_imgs'][:, 330:333, :], drec['imgs'].view(bs, height, width)[:, 330:333, :])
-        # loss_tv_root = self.compute_variation_Loss(drec['imgs'].view(bs, height, width)[:, 330:333, :], tv_weight)
+        # loss_root = 100 * self.LossL2(data['motion_imgs'][:, 330:333, :], drec['imgs'][:, 330:333, :])
+        # loss_root = 30 * self.LossL1(data['motion_imgs'][:, 330:333, :], drec['imgs'][:, 330:333, :])
+        # loss_tv_root = self.compute_variation_Loss(drec['imgs'][:, 330:333, :], tv_weight)
 
-        # loss_obj_orient = 100 * self.LossL2(data['motion_imgs'][:, 333:339, :], drec['imgs'].view(bs, height, width)[:, 333:339, :])
+        # loss_obj_orient = 100 * self.LossL2(data['motion_imgs'][:, 333:339, :], drec['imgs'][:, 333:339, :])
         # loss_obj_orient = self.compute_geodesic_loss(data['motion_imgs'][:, 333:339, :].permute(0, 2, 1),
-        #                                                    drec['imgs'].view(bs, height, width)[:, 333:339, :].permute(0, 2, 1))
-        # loss_tv_obj_orient = self.compute_variation_Loss(drec['imgs'].view(bs, height, width)[:, 333:339, :], tv_weight)
+        #                                                    drec['imgs'][:, 333:339, :].permute(0, 2, 1))
+        # loss_tv_obj_orient = self.compute_variation_Loss(drec['imgs'][:, 333:339, :], tv_weight)
 
-        # loss_obj_transl = 100 * self.LossL2(data['motion_imgs'][:, 339:, :], drec['imgs'].view(bs, height, width)[:, 339:, :])
-        # loss_obj_transl = 30 * self.LossL1(data['motion_imgs'][:, 339:, :], drec['imgs'].view(bs, height, width)[:, 339:, :])
+        # loss_obj_transl = 100 * self.LossL2(data['motion_imgs'][:, 339:, :], drec['imgs'][:, 339:, :])
+        # loss_obj_transl = 30 * self.LossL1(data['motion_imgs'][:, 339:, :], drec['imgs'][:, 339:, :])
         # loss_tv_obj_transl = self.compute_variation_Loss(drec['imgs'].view(bs, height, width)[:, 339:, :], tv_weight)
 
         q_z = torch.distributions.normal.Normal(drec['mean'], drec['std'])
@@ -207,8 +207,8 @@ class Trainer:
         )
         loss_kl = 10 * 0.005 * torch.mean(torch.sum(torch.distributions.kl.kl_divergence(q_z, p_z)))
 
-        # loss_firstframe = 10 * self.LossL1(data['motion_imgs'][:, :, 0], drec['imgs'].view(bs, height, width)[:, :, 0])
-        # loss_lastframe = 10 * self.LossL1(data['motion_imgs'][:, :, -1], drec['imgs'].view(bs, height, width)[:, :, -1])
+        # loss_firstframe = 10 * self.LossL1(data['motion_imgs'][:, :, 0], drec['imgs'][:, :, 0])
+        # loss_lastframe = 10 * self.LossL1(data['motion_imgs'][:, :, -1], drec['imgs'][:, :, -1])
 
         loss_dict = {
             'loss_reconstruction': loss_reconstruction,
