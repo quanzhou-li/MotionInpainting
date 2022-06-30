@@ -180,7 +180,8 @@ class Trainer:
         bs, height, width = data['motion_imgs'].shape
         tv_weight = 1e-3
 
-        loss_reconstruction = 100 * self.LossL2(data['motion_imgs'][:, :330, 1:-1], drec['imgs'][:, :330, 1:-1])
+        # loss_reconstruction = 100 * self.LossL2(data['motion_imgs'][:, :330, 1:-1], drec['imgs'][:, :330, 1:-1])
+        loss_reconstruction = 100 * self.LossL2(data['motion_imgs'][:, :330, :], drec['imgs'][:, :330, :])
         # loss_reconstruction = self.compute_geodesic_loss(data['motion_imgs'][:, :330, :].permute(0, 2, 1),
         #                                                        drec['imgs'][:, :330, :].permute(0, 2, 1))
         loss_tv_pose = self.compute_variation_Loss(drec['imgs'][:, :330, :], tv_weight)
