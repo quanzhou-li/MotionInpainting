@@ -71,9 +71,9 @@ class INRGenerator(nn.Module):
 
         self.width, self.height = 64, self.frame_D
         self.img_enc = ResBlock(self.width * self.height, self.dim_z)
-        self.rb1 = ResBlock(self.dim_z, 2 * self.dim_z)
-        self.rb2 = ResBlock(2 * self.dim_z, 2 * self.dim_z)
-        self.rb3 = ResBlock(2 * self.dim_z, self.dim_z)
+        # self.rb1 = ResBlock(self.dim_z, 2 * self.dim_z)
+        # self.rb2 = ResBlock(2 * self.dim_z, 2 * self.dim_z)
+        # self.rb3 = ResBlock(2 * self.dim_z, self.dim_z)
         self.enc_mu = nn.Linear(self.dim_z, self.dim_z)
         self.enc_var = nn.Linear(self.dim_z, self.dim_z)
 
@@ -128,6 +128,8 @@ class INRGenerator(nn.Module):
         # inrs_weights = self.compute_model_forward(z)  # Test without first and last frames
 
         imgs = self.forward_for_weights(inrs_weights, width, height)
+        imgs[:, :, 0] = first_frame
+        imgs[:, :, -1] = last_frame
         results = {'mean': dist.mean, 'std': dist.scale, 'imgs': imgs}
         # results = {'imgs': imgs}
 
@@ -136,17 +138,21 @@ class INRGenerator(nn.Module):
     def decode(self, z: Tensor, first_frame: Tensor, last_frame: Tensor, width: int, height: int) -> Dict[str, Tensor]:
         feat_fframe = self.fframe_enc(first_frame)
         feat_lframe = self.lframe_enc(last_frame)
-        # feat = torch.cat([z, feat_fframe, feat_lframe], dim=1)
-        # inrs_weights = self.compute_model_forward(feat)
+        feat = torch.cat([z, feat_fframe, feat_lframe], dim=1)
+        inrs_weights = self.compute_model_forward(feat)
         # inrs_weights = self.compute_model_forward(z)  # Test without first and last frames
 
-        feat_content = self.rb1(z)
-        feat_content = self.rb2(feat_content)
-        feat_content = self.rb3(feat_content)
-        feat = torch.cat([feat_fframe, feat_content, feat_lframe], dim=1)
-        inrs_weights = self.compute_model_forward(feat)
+        # feat_content = self.rb1(z)
+        # feat_content = self.rb2(feat_content)
+        # feat_content = self.rb3(feat_content)
+        # feat = torch.cat([feat_fframe, feat_content, feat_lframe], dim=1)
+        # inrs_weights = self.compute_model_forward(feat)
 
-        return {'imgs': self.forward_for_weights(inrs_weights, width, height)}
+        imgs = self.forward_for_weights(inrs_weights, width, height)
+        imgs[:, :, 0] = first_frame
+        imgs[:, :, -1] = last_frame
+
+        return {'imgs': imgs}
 
     def forward_for_weights(self, inrs_weights: Tensor, width: int, height: int,
                             return_activations: bool = False) -> Tensor:
