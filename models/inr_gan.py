@@ -128,8 +128,8 @@ class INRGenerator(nn.Module):
         # inrs_weights = self.compute_model_forward(z)  # Test without first and last frames
 
         imgs = self.forward_for_weights(inrs_weights, width, height).view(bs, height, width)
-        imgs[:, :, 0] = first_frame
-        imgs[:, :, -1] = last_frame
+        # imgs[:, :, 0] = first_frame
+        # imgs[:, :, -1] = last_frame
         results = {'mean': dist.mean, 'std': dist.scale, 'imgs': imgs}
         # results = {'imgs': imgs}
 
@@ -149,8 +149,8 @@ class INRGenerator(nn.Module):
         # inrs_weights = self.compute_model_forward(feat)
 
         imgs = self.forward_for_weights(inrs_weights, width, height).view(bs, height, width)
-        imgs[:, :, 0] = first_frame
-        imgs[:, :, -1] = last_frame
+        # imgs[:, :, 0] = first_frame
+        # imgs[:, :, -1] = last_frame
 
         return {'imgs': imgs}
 

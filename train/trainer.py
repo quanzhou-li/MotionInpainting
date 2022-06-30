@@ -221,6 +221,8 @@ class Trainer:
 
         # loss_fsmooth = tv_weight * torch.pow(drec['imgs'][:, :330, 1] - drec['imgs'][:, :330, 0], 2).sum() / bs
         # loss_lsmooth = tv_weight * torch.pow(drec['imgs'][:, :330, -1] - drec['imgs'][:, :330, -2], 2).sum() / bs
+        # loss_fsmooth = tv_weight * torch.pow(predict_imgs[:, :330, 1] - predict_imgs[:, :330, 0], 2).sum() / bs
+        # loss_lsmooth = tv_weight * torch.pow(predict_imgs[:, :330, -1] - predict_imgs[:, :330, -2], 2).sum() / bs
 
         loss_dict = {
             'loss_reconstruction': loss_reconstruction,
