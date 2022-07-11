@@ -181,12 +181,13 @@ class SIRENs(INRs):
 
 class FourierINRs(INRs):
     def __init__(self, config: Config):
+        self.num_fourier_feats = 5
         super().__init__(config)
 
     def init_model(self):
         layer_sizes = [128, 256, 512, 512, 512, 256, 128]
         layers = self.create_transform(
-            2,
+            self.num_fourier_feats * 2,
             layer_sizes[0],
             layer_type='linear',
             is_coord_layer=True,
@@ -222,11 +223,30 @@ class FourierINRs(INRs):
 
         self.model = nn.Sequential(*layers)
 
+        basis_matrix = torch.randn(self.num_fourier_feats, 2)
+        self.basis_matrix = nn.Parameter(basis_matrix, requires_grad=False)
+
+    def compute_fourier_feats(self, coords: Tensor) -> Tensor:
+        bs = coords.shape[0]
+        bm = self.basis_matrix.repeat(bs, 1).reshape(bs, self.num_fourier_feats, 2)
+        sines = (2 * np.pi * torch.bmm(bm, coords)).sin()
+        cosines = (2 * np.pi * torch.bmm(bm, coords)).sin()
+        return torch.cat([sines, cosines], dim=1)
+
     def compute_weight_std(self, in_features: int, is_coord_layer: bool) -> float:
         if is_coord_layer:
             return 10.0
         else:
             return np.sqrt(2 / in_features)
+
+    def forward(self, coords: Tensor, inrs_weights: Tensor, return_activations: bool=False) -> Tensor:
+        """
+        Computes a batch of INRs in the given coordinates
+
+        @param coords: coordinates | [n_coords, 2]
+        @param inrs_weights: weights of INRs | [batch_size, coord_dim]
+        """
+        return self.apply_weights(self.compute_fourier_feats(coords), inrs_weights, return_activations=return_activations)
 
 
 class HierarchicalFourierINRs(FourierINRs, INRs):
