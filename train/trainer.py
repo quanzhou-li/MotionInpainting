@@ -91,8 +91,8 @@ class Trainer:
             # Generate a random mask with roughly ratio parts blank
             ratio = 1.0
             mask = self.generate_mask(bs, width, height, ratio)
-            # drec_inr = self.inr(data['motion_imgs']*mask, fframes, lframes, width, height, self.device)
-            drec_inr = self.inr(data['motion_imgs'] * mask, fframes, lframes, width - 2, height, self.device)
+            drec_inr = self.inr(data['motion_imgs']*mask, fframes, lframes, width, height, self.device)
+            # drec_inr = self.inr(data['motion_imgs'] * mask, fframes, lframes, width - 2, height, self.device)
             # drec_inr = self.inr(fframes, lframes, width, height)
             '''tmp_img = torch.zeros(bs, height, width+2).to(self.device)
             tmp_img[:, :, 0] = fframes
@@ -142,8 +142,8 @@ class Trainer:
                 lframes = data['motion_imgs'][:, :, -1]
                 ratio = 1.0
                 mask = self.generate_mask(bs, width, height, ratio)
-                # drec_inr = self.inr(data['motion_imgs']*mask, fframes, lframes, width, height, self.device)
-                drec_inr = self.inr(data['motion_imgs'] * mask, fframes, lframes, width - 2, height, self.device)
+                drec_inr = self.inr(data['motion_imgs']*mask, fframes, lframes, width, height, self.device)
+                # drec_inr = self.inr(data['motion_imgs'] * mask, fframes, lframes, width - 2, height, self.device)
                 # drec_inr = self.inr(fframes, lframes, width, height)
                 '''tmp_img = torch.zeros(bs, height, width+2).to(self.device)
                 tmp_img[:, :, 0] = fframes
@@ -183,16 +183,16 @@ class Trainer:
         tv_weight = 1e-3
 
         # Only predicts the content between the first and last frames
-        predict_imgs = torch.clone(data['motion_imgs'])
+        '''predict_imgs = torch.clone(data['motion_imgs'])
         predict_imgs[:, :, 1:-1] = drec['imgs']
         loss_reconstruction = 100 * self.LossL2(data['motion_imgs'][:, :330, 1:-1], predict_imgs[:, :330, 1:-1])
-        loss_tv_pose = self.compute_variation_Loss(predict_imgs[:, :330, :], tv_weight)
+        loss_tv_pose = self.compute_variation_Loss(predict_imgs[:, :330, :], tv_weight)'''
 
-        # loss_reconstruction = 100 * self.LossL2(data['motion_imgs'][:, :330, 1:-1], drec['imgs'][:, :330, 1:-1])
+        loss_reconstruction = 100 * self.LossL2(data['motion_imgs'][:, :330, 1:-1], drec['imgs'][:, :330, 1:-1])
         # loss_reconstruction = 100 * self.LossL2(data['motion_imgs'][:, :330, :], drec['imgs'][:, :330, :])
         # loss_reconstruction = self.compute_geodesic_loss(data['motion_imgs'][:, :330, :].permute(0, 2, 1),
         #                                                        drec['imgs'][:, :330, :].permute(0, 2, 1))
-        # loss_tv_pose = self.compute_variation_Loss(drec['imgs'][:, :330, :], tv_weight)
+        loss_tv_pose = self.compute_variation_Loss(drec['imgs'][:, :330, :], tv_weight)
 
         # loss_root = 100 * self.LossL2(data['motion_imgs'][:, 330:333, :], drec['imgs'][:, 330:333, :])
         # loss_root = 30 * self.LossL1(data['motion_imgs'][:, 330:333, :], drec['imgs'][:, 330:333, :])
@@ -219,10 +219,10 @@ class Trainer:
         # loss_firstframe = 10 * self.LossL1(data['motion_imgs'][:, :, 0], drec['imgs'][:, :, 0])
         # loss_lastframe = 10 * self.LossL1(data['motion_imgs'][:, :, -1], drec['imgs'][:, :, -1])
 
-        # loss_fsmooth = tv_weight * torch.pow(drec['imgs'][:, :330, 1] - drec['imgs'][:, :330, 0], 2).sum() / bs
-        # loss_lsmooth = tv_weight * torch.pow(drec['imgs'][:, :330, -1] - drec['imgs'][:, :330, -2], 2).sum() / bs
-        loss_fsmooth = tv_weight * torch.pow(predict_imgs[:, :330, 1] - predict_imgs[:, :330, 0], 2).sum() / bs
-        loss_lsmooth = tv_weight * torch.pow(predict_imgs[:, :330, -1] - predict_imgs[:, :330, -2], 2).sum() / bs
+        loss_fsmooth = tv_weight * torch.pow(drec['imgs'][:, :330, 1] - drec['imgs'][:, :330, 0], 2).sum() / bs
+        loss_lsmooth = tv_weight * torch.pow(drec['imgs'][:, :330, -1] - drec['imgs'][:, :330, -2], 2).sum() / bs
+        # loss_fsmooth = tv_weight * torch.pow(predict_imgs[:, :330, 1] - predict_imgs[:, :330, 0], 2).sum() / bs
+        # loss_lsmooth = tv_weight * torch.pow(predict_imgs[:, :330, -1] - predict_imgs[:, :330, -2], 2).sum() / bs
 
         loss_dict = {
             'loss_reconstruction': loss_reconstruction,
