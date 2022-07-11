@@ -74,6 +74,8 @@ class Trainer:
         if cfg.best_model is not None:
             self.inr.load_state_dict(torch.load(cfg.best_model, map_location=self.device))
 
+        torch.save(self.inr.inr.basis_matrix, os.path.join(cfg.work_dir, 'fourier_basis_matrix.pt'))
+
     def train(self):
 
         self.inr.train()
