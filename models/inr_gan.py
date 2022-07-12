@@ -214,3 +214,23 @@ class INRGeneratorBlock(nn.Module):
             return x + self.main_branch_weight * y
         else:
             return y
+
+
+class Discriminator(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.input_dim = 330 * 2
+        self.output_dim = 1
+
+        self.fc1 = nn.Linear(self.input_dim, 512)
+        self.fc2 = nn.Linear(512, 256)
+        self.fc3 = nn.Linear(256, self.output_dim)
+        self.relu = nn. ReLU()
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.fc2(x)
+        x = self.relu(x)
+        x = self.fc3(x)
+        return x
