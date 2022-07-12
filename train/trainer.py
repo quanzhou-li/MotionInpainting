@@ -205,8 +205,8 @@ class Trainer:
         short_fake_logits = torch.mean(self.short_discriminator(fake_short))
         long_fake_logits = torch.mean(self.long_discriminator(fake_long))
 
-        loss_g_short = 6 * torch.mean((short_fake_logits - 1.) ** 2)
-        loss_g_long = 6 * torch.mean((long_fake_logits - 1.) ** 2)
+        loss_g_short = 3 * torch.mean((short_fake_logits - 1.) ** 2)
+        loss_g_long = 3 * torch.mean((long_fake_logits - 1.) ** 2)
 
         loss_dict = {
             'loss_g_short': loss_g_short,
@@ -228,8 +228,8 @@ class Trainer:
         long_fake_logits = torch.mean(self.long_discriminator(fake_long))
         long_real_logits = torch.mean((self.long_discriminator(real_long)))
 
-        loss_d_short = 6 * (torch.mean((short_real_logits - 1.) ** 2) + torch.mean(short_fake_logits ** 2)) / 2.
-        loss_d_long = 6 * (torch.mean((long_real_logits - 1.) ** 2) + torch.mean(long_fake_logits ** 2)) / 2.
+        loss_d_short = 10 * (torch.mean((short_real_logits - 1.) ** 2) + torch.mean(short_fake_logits ** 2)) / 2.
+        loss_d_long = 10 * (torch.mean((long_real_logits - 1.) ** 2) + torch.mean(long_fake_logits ** 2)) / 2.
 
         loss_dict = {
             'loss_d_short': loss_d_short,
