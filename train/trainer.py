@@ -52,6 +52,9 @@ class Trainer:
         self.config_inr = FirelabCFG.load(cfg.inr_config)
         self.inr = INRGenerator(self.config_inr).to(self.device)
 
+        self.short_discriminator = Discriminator().to(self.device)
+        self.long_discriminator = Discriminator().to(self.device)
+
         if cfg.use_multigpu:
             self.inr = nn.DataParallel(self.inr)
             logger("Training on Multiple GPUs")
@@ -68,6 +71,9 @@ class Trainer:
 
         self.optimizer_inr = optim.Adam(vars_inr, lr=cfg.base_lr, weight_decay=cfg.reg_coef)
 
+        self.optimizer_d = optim.Adam(list(self.short_discriminator.parameters()) +
+                                      list(self.long_discriminator.parameters()), lr=cfg.base_lr)
+
         self.best_loss_inr = np.inf
         self.cfg = cfg
 
@@ -79,6 +85,8 @@ class Trainer:
     def train(self):
 
         self.inr.train()
+        self.short_discriminator.train()
+        self.long_discriminator.train()
         torch.autograd.set_detect_anomaly(True)
 
         train_loss_dict_inr = {}
@@ -105,13 +113,23 @@ class Trainer:
 
             loss_total_inr, cur_loss_dict_inr = self.loss_inr(data, drec_inr)
 
-            loss_total_inr.backward()
+            loss_g, cur_loss_dict_g = self.loss_adv_g(data, drec_inr)
+            loss_total_inr += loss_g
+
+            loss_total_inr.backward(retain_graph=True)
 
             # torch.nn.utils.clip_grad_value_(self.inr.parameters(), 5)
             self.optimizer_inr.step()
 
+            self.optimizer_d.zero_grad()
+            drec_inr = self.inr(data['motion_imgs']*mask, fframes, lframes, width, height, self.device)
+            loss_d, cur_loss_dict_d = self.loss_adv_d(data, drec_inr)
+            loss_d.backward()
+            self.optimizer_d.step()
+
+            cur_loss_dict_inr['loss_total'] += loss_g + loss_d
             train_loss_dict_inr = {k: train_loss_dict_inr.get(k, 0.0) + v.item() for k, v in
-                                          cur_loss_dict_inr.items()}
+                                   {**cur_loss_dict_inr, **cur_loss_dict_g, **cur_loss_dict_d}.items()}
             if it % (self.cfg.save_every_it - 1) == 0:
                 cur_train_loss_dict_inr = {k: v / (it + 1) for k, v in train_loss_dict_inr.items()}
                 train_msg = self.create_loss_message(cur_train_loss_dict_inr,
@@ -179,6 +197,48 @@ class Trainer:
         tv_w = torch.pow(img[:, :, 1:]-img[:, :, :-1], 2).sum()
         # return weight * (tv_h + tv_w) / (bs * h * w)
         return weight * tv_w / (bs * w)
+
+    def loss_adv_g(self, data, drec):
+        fake_short = torch.cat([drec['imgs'][:, :, :-1], drec['imgs'][:, :, 1:]], dim=1).permute(0, 2, 1)
+        fake_long = torch.cat([drec['imgs'][:, :, :-8], drec['imgs'][:, :, 8:]], dim=1).permute(0, 2, 1)
+
+        short_fake_logits = torch.mean(self.short_discriminator(fake_short))
+        long_fake_logits = torch.mean(self.long_discriminator(fake_long))
+
+        loss_g_short = 30 * torch.mean((short_fake_logits - 1.) ** 2)
+        loss_g_long = 30 * torch.mean((long_fake_logits - 1.) ** 2)
+
+        loss_dict = {
+            'loss_g_short': loss_g_short,
+            'loss_g_long': loss_g_long,
+        }
+
+        loss_g = torch.stack([loss_g_short, loss_g_long]).sum()
+
+        return loss_g, loss_dict
+
+    def loss_adv_d(self, data, drec):
+        real_short = torch.cat([data['motion_imgs'][:, :, :-1], data['motion_imgs'][:, :, 1:]], dim=1).permute(0, 2, 1)
+        fake_short = torch.cat([drec['imgs'][:, :, :-1], drec['imgs'][:, :, 1:]], dim=1).permute(0, 2, 1)
+        real_long = torch.cat([data['motion_imgs'][:, :, :-8], data['motion_imgs'][:, :, 8:]], dim=1).permute(0, 2, 1)
+        fake_long = torch.cat([drec['imgs'][:, :, :-8], drec['imgs'][:, :, 8:]], dim=1).permute(0, 2, 1)
+
+        short_fake_logits = torch.mean(self.short_discriminator(fake_short))
+        short_real_logits = torch.mean(self.short_discriminator(real_short))
+        long_fake_logits = torch.mean(self.long_discriminator(fake_long))
+        long_real_logits = torch.mean((self.long_discriminator(real_long)))
+
+        loss_d_short = 30 * (torch.mean((short_real_logits - 1.) ** 2) + torch.mean(short_fake_logits ** 2)) / 2.
+        loss_d_long = 30 * (torch.mean((long_real_logits - 1.) ** 2) + torch.mean(long_fake_logits ** 2)) / 2.
+
+        loss_dict = {
+            'loss_d_short': loss_d_short,
+            'loss_d_long': loss_d_long,
+        }
+
+        loss_d = torch.stack([loss_d_short, loss_d_long]).sum()
+
+        return loss_d, loss_dict
 
     def loss_inr(self, data, drec):
         bs, height, width = data['motion_imgs'].shape
