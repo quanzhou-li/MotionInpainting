@@ -207,7 +207,7 @@ class FourierINRs(INRs):
                 input_dim,
                 layer_sizes[i+1],
                 # layer_type='mm_se_factorized')
-                layer_type='shared_linear')
+                layer_type='factorized')
             curr_transform_layers.append(INRProxy(create_activation('relu')))
 
             hid_layers.append((INRSequential(*curr_transform_layers)))
