@@ -533,7 +533,7 @@ class MultiModalINRFactorizedSELinear(INRFactorizedSELinear):
 
 
 class MultiModalINRSharedLinear(INRFactorizedSELinear):
-    def __init__(self, in_features: int, out_features: int, weight_std: float, bias_std: float, num_modes: int, temperature: float):
+    def __init__(self, in_features: int, out_features: int, weight_std: float, bias_std: float, num_modes: int, temperature: float, init_dist: str="normal"):
         INRModule.__init__(self)
 
         self.num_modes = num_modes

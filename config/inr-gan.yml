@@ -139,7 +139,7 @@ hp:
       factorized: {rank: 10}
       se_factorized: {rank: 10, equalized_lr: false}
       mm_se_factorized: {rank: 5, num_modes: 1, temperature: 0.05}
-      mm_shared_linear: {num_modes: 1000}
+      mm_shared_linear: {num_modes: 1000, temperature: 0.05}
 
   # grad_clipping:
   #   generator: 1000
