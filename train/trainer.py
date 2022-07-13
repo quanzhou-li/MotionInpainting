@@ -243,7 +243,7 @@ class Trainer:
 
     def loss_inr(self, data, drec):
         bs, height, width = data['motion_imgs'].shape
-        tv_weight = 1e-2
+        tv_weight = 1e-3
 
         # Only predicts the content between the first and last frames
         '''predict_imgs = torch.clone(data['motion_imgs'])
@@ -251,7 +251,7 @@ class Trainer:
         loss_reconstruction = 100 * self.LossL2(data['motion_imgs'][:, :330, 1:-1], predict_imgs[:, :330, 1:-1])
         loss_tv_pose = self.compute_variation_Loss(predict_imgs[:, :330, :], tv_weight)'''
 
-        loss_reconstruction = 100 * self.LossL2(data['motion_imgs'][:, :330, 1:-1], drec['imgs'][:, :330, 1:-1])
+        loss_reconstruction = 100 * self.LossL1(data['motion_imgs'][:, :330, 1:-1], drec['imgs'][:, :330, 1:-1])
         # loss_reconstruction = 100 * self.LossL2(data['motion_imgs'][:, :330, :], drec['imgs'][:, :330, :])
         # loss_reconstruction = self.compute_geodesic_loss(data['motion_imgs'][:, :330, :].permute(0, 2, 1),
         #                                                        drec['imgs'][:, :330, :].permute(0, 2, 1))
