@@ -236,7 +236,7 @@ class INRFactorizedLinear(INRLinear):
     def transform_params(self, params: Tensor) -> Tensor:
         num_inrs = len(params)
         lhs = params[:, :self.out_features * self.rank]
-        rhs = params[:, self.in_features * self.rank:-self.out_features]
+        rhs = params[:, self.out_features * self.rank:-self.out_features]
         bias = params[:, -self.out_features:]
 
         lhs = lhs.view(num_inrs, self.out_features, self.rank)
