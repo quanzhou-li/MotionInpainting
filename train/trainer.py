@@ -243,7 +243,7 @@ class Trainer:
 
     def loss_inr(self, data, drec):
         bs, height, width = data['motion_imgs'].shape
-        tv_weight = 1e-3
+        tv_weight = 1e-2
 
         # Only predicts the content between the first and last frames
         '''predict_imgs = torch.clone(data['motion_imgs'])
