@@ -116,7 +116,8 @@ class Trainer:
             # loss_g, cur_loss_dict_g = self.loss_adv_g(data, drec_inr)
             # loss_total_inr += loss_g
 
-            loss_total_inr.backward(retain_graph=True)
+            # loss_total_inr.backward(retain_graph=True)
+            loss_total_inr.backward()
 
             # torch.nn.utils.clip_grad_value_(self.inr.parameters(), 5)
             self.optimizer_inr.step()
