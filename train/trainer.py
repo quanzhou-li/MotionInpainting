@@ -113,23 +113,24 @@ class Trainer:
 
             loss_total_inr, cur_loss_dict_inr = self.loss_inr(data, drec_inr)
 
-            loss_g, cur_loss_dict_g = self.loss_adv_g(data, drec_inr)
-            loss_total_inr += loss_g
+            # loss_g, cur_loss_dict_g = self.loss_adv_g(data, drec_inr)
+            # loss_total_inr += loss_g
 
             loss_total_inr.backward(retain_graph=True)
 
             # torch.nn.utils.clip_grad_value_(self.inr.parameters(), 5)
             self.optimizer_inr.step()
 
-            self.optimizer_d.zero_grad()
+            '''self.optimizer_d.zero_grad()
             drec_inr = self.inr(data['motion_imgs']*mask, fframes, lframes, width, height, self.device)
             loss_d, cur_loss_dict_d = self.loss_adv_d(data, drec_inr)
             loss_d.backward()
-            self.optimizer_d.step()
+            self.optimizer_d.step()'''
 
-            cur_loss_dict_inr['loss_total'] += loss_g + loss_d
-            train_loss_dict_inr = {k: train_loss_dict_inr.get(k, 0.0) + v.item() for k, v in
-                                   {**cur_loss_dict_inr, **cur_loss_dict_g, **cur_loss_dict_d}.items()}
+            # cur_loss_dict_inr['loss_total'] += loss_g + loss_d
+            # train_loss_dict_inr = {k: train_loss_dict_inr.get(k, 0.0) + v.item() for k, v in
+            #                        {**cur_loss_dict_inr, **cur_loss_dict_g, **cur_loss_dict_d}.items()}
+            train_loss_dict_inr = {k: train_loss_dict_inr.get(k, 0.0) + v.item() for k, v in cur_loss_dict_inr.items()}
             if it % (self.cfg.save_every_it - 1) == 0:
                 cur_train_loss_dict_inr = {k: v / (it + 1) for k, v in train_loss_dict_inr.items()}
                 train_msg = self.create_loss_message(cur_train_loss_dict_inr,
