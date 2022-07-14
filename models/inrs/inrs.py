@@ -47,6 +47,14 @@ def generate_coords(batch_size: int, width: int, height: int) -> Tensor:
     return coords
 
 
+def generate_coords_1D(batch_size: int, width: int) -> Tensor:
+    coords = torch.arange(0, width).float() / width
+    coords = coords.reshape(width, 1)
+    coords = coords.view(1, 1, width).repeat(batch_size, 1, 1)
+
+    return coords
+
+
 class INRs(nn.Module):
     def __init__(self, config: Config):
         super(INRs, self).__init__()
@@ -70,21 +78,21 @@ class INRs(nn.Module):
         return coords
 
     def generate_image(self, inrs_weights: Tensor, width: int, height: int, return_activations: bool=False) -> Tensor:
-        coords = self.generate_input_coords(len(inrs_weights), width, height).to(inrs_weights.device)
+        # coords = self.generate_input_coords(len(inrs_weights), width, height).to(inrs_weights.device)
 
-        if return_activations:
-            images_raw, activations = self.forward(coords, inrs_weights, return_activations=True) # [batch_size, num_channels, num_coords]
-        else:
-            images_raw = self.forward(coords, inrs_weights) # [batch_size, num_channels, num_coords]
+        # if return_activations:
+        #     images_raw, activations = self.forward(coords, inrs_weights, return_activations=True) # [batch_size, num_channels, num_coords]
+        # else:
+        #     images_raw = self.forward(coords, inrs_weights) # [batch_size, num_channels, num_coords]
 
-        bs = len(inrs_weights)
-        images = images_raw.permute(0, 2, 1).reshape(bs, height, width)
+        # bs = len(inrs_weights)
+        # images = images_raw.permute(0, 2, 1).reshape(bs, height, width)
 
-        # num_img_channels = 1
-        # images = images_raw.view(len(inrs_weights), num_img_channels, width, height).permute(0, 1, 3, 2) # [batch_size, num_channels, img_size, img_size]
-        # images = images_raw.view(len(inrs_weights), num_img_channels, height, width) # [batch_size, num_channels, img_size, img_size]
+        coords = generate_coords_1D(len(inrs_weights), width)
+        images = self.forward(coords, inrs_weights)
 
-        return (images, activations) if return_activations else images
+        # return (images, activations) if return_activations else images
+        return images
 
     def apply_weights(self, x: Tensor, inrs_weights: Tensor, return_activations: bool=False) -> Tensor:
         curr_w = inrs_weights
@@ -191,10 +199,12 @@ class FourierINRs(INRs):
 
     def init_model(self):
         layer_sizes = [128, 256, 512, 512, 512, 256, 128]
-        # layer_sizes = [128, 256, 256, 128]
+        # output_dim = 1
+        output_dim = 330
         layers = self.create_transform(
-            self.num_fourier_feats * 2,
-            # 2,
+            # self.num_fourier_feats * 2,
+            # self.num_fourier_feats,
+            1,
             layer_sizes[0],
             layer_type='linear',
             is_coord_layer=True,
@@ -226,7 +236,7 @@ class FourierINRs(INRs):
             layers.append(INRProxy(create_activation('sine')))
         '''
 
-        layers.extend(self.create_transform(layer_sizes[-1], 1, 'linear'))
+        layers.extend(self.create_transform(layer_sizes[-1], output_dim, 'linear'))
         layers.append(INRProxy(create_activation('none')))
 
         self.model = nn.Sequential(*layers)
@@ -247,14 +257,14 @@ class FourierINRs(INRs):
         else:
             return np.sqrt(2 / in_features)
 
-    def forward(self, coords: Tensor, inrs_weights: Tensor, return_activations: bool=False) -> Tensor:
+    # def forward(self, coords: Tensor, inrs_weights: Tensor, return_activations: bool=False) -> Tensor:
         """
         Computes a batch of INRs in the given coordinates
 
         @param coords: coordinates | [n_coords, 2]
         @param inrs_weights: weights of INRs | [batch_size, coord_dim]
         """
-        return self.apply_weights(self.compute_fourier_feats(coords), inrs_weights, return_activations=return_activations)
+        # return self.apply_weights(self.compute_fourier_feats(coords), inrs_weights, return_activations=return_activations)
 
 
 class HierarchicalFourierINRs(FourierINRs, INRs):
