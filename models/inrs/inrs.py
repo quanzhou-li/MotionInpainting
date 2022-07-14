@@ -88,7 +88,7 @@ class INRs(nn.Module):
         # bs = len(inrs_weights)
         # images = images_raw.permute(0, 2, 1).reshape(bs, height, width)
 
-        coords = generate_coords_1D(len(inrs_weights), width)
+        coords = generate_coords_1D(len(inrs_weights), width).to(inrs_weights.device)
         images = self.forward(coords, inrs_weights)
 
         # return (images, activations) if return_activations else images
@@ -245,6 +245,13 @@ class FourierINRs(INRs):
         self.basis_matrix = nn.Parameter(basis_matrix, requires_grad=False)
 
     def compute_fourier_feats(self, coords: Tensor) -> Tensor:
+        bs = coords.shape[0]
+        bm = self.basis_matrix.repeat(bs, 1).reshape(bs, self.num_fourier_feats, 2)
+        sines = (2 * np.pi * torch.bmm(bm, coords)).sin()
+        cosines = (2 * np.pi * torch.bmm(bm, coords)).sin()
+        return torch.cat([sines, cosines], dim=1)
+
+    def compute_fourier_feats_1D(self, coords: Tensor) -> Tensor:
         bs = coords.shape[0]
         bm = self.basis_matrix.repeat(bs, 1).reshape(bs, self.num_fourier_feats, 2)
         sines = (2 * np.pi * torch.bmm(bm, coords)).sin()
