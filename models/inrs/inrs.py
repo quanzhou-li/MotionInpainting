@@ -77,7 +77,8 @@ class INRs(nn.Module):
             images_raw = self.forward(coords, inrs_weights) # [batch_size, num_channels, num_coords]
 
         num_img_channels = 1
-        images = images_raw.view(len(inrs_weights), num_img_channels, width, height).permute(0, 1, 3, 2) # [batch_size, num_channels, img_size, img_size]
+        # images = images_raw.view(len(inrs_weights), num_img_channels, width, height).permute(0, 1, 3, 2) # [batch_size, num_channels, img_size, img_size]
+        images = images_raw.view(len(inrs_weights), num_img_channels, height, width) # [batch_size, num_channels, img_size, img_size]
 
         return (images, activations) if return_activations else images
 
@@ -185,7 +186,8 @@ class FourierINRs(INRs):
         super().__init__(config)
 
     def init_model(self):
-        layer_sizes = [128, 256, 512, 512, 512, 256, 128]
+        # layer_sizes = [128, 256, 512, 512, 512, 256, 128]
+        layer_sizes = [128, 256, 256, 128]
         layers = self.create_transform(
             # self.num_fourier_feats * 2,
             2,
