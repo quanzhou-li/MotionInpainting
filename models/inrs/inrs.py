@@ -193,8 +193,8 @@ class FourierINRs(INRs):
         layer_sizes = [128, 256, 512, 512, 512, 256, 128]
         # layer_sizes = [128, 256, 256, 128]
         layers = self.create_transform(
-            # self.num_fourier_feats * 2,
-            2,
+            self.num_fourier_feats * 2,
+            # 2,
             layer_sizes[0],
             layer_type='linear',
             is_coord_layer=True,
@@ -247,14 +247,14 @@ class FourierINRs(INRs):
         else:
             return np.sqrt(2 / in_features)
 
-    # def forward(self, coords: Tensor, inrs_weights: Tensor, return_activations: bool=False) -> Tensor:
+    def forward(self, coords: Tensor, inrs_weights: Tensor, return_activations: bool=False) -> Tensor:
         """
         Computes a batch of INRs in the given coordinates
 
         @param coords: coordinates | [n_coords, 2]
         @param inrs_weights: weights of INRs | [batch_size, coord_dim]
         """
-        # return self.apply_weights(self.compute_fourier_feats(coords), inrs_weights, return_activations=return_activations)
+        return self.apply_weights(self.compute_fourier_feats(coords), inrs_weights, return_activations=return_activations)
 
 
 class HierarchicalFourierINRs(FourierINRs, INRs):
