@@ -47,10 +47,22 @@ def smooth_sequence(T, sequence):
     return smoothed
 
 
+def generate_mask(bs, width, height, ratio):
+    mask = torch.FloatTensor(height, width).uniform_() > ratio
+
+    mask[:, 0] = torch.ones(height)
+    mask[:, -1] = torch.ones(height)
+    mask = mask.repeat(bs, 1, 1)
+
+    return mask
+
+
 def render_img(cfg):
     config_inr = FireCFG.load(cfg.inr_config)
     inr = INRGenerator(config_inr).to(device)
     inr.load_state_dict(torch.load(cfg.model_path, map_location=torch.device('cpu')))
+    # fourier_basis_matrix = torch.load(os.path.join(*cfg.model_path.split('/')[:-1], 'fourier_basis_matrix.pt'), map_location=torch.device('cpu'))
+    # inr.inr.basis_matrix = fourier_basis_matrix
     inr.eval()
 
     mv = MeshViewer(offscreen=True)
@@ -58,29 +70,55 @@ def render_img(cfg):
     # set the camera pose
     camera_pose = np.eye(4)
     camera_pose[:3, :3] = euler([80, 30, 0], 'xzx')
-    camera_pose[:3, 3] = np.array([1.3, -2.3, 1.5])
+    camera_pose[:3, 3] = np.array([1.3, -2.3, 0.8])
     mv.update_camera_pose(camera_pose)
 
     data = parse_npz(cfg.data_path)
     batch_size = 1
-    data['motion_img'] = torch.FloatTensor(data['motion_img'][:, :].reshape(1, 342, 64))
-    bs, height, width = data['motion_img'].shape
+    data['motion_img'] = torch.FloatTensor(data['motion_img'][:330, :].reshape(1, 330, 64))
+    bs, height_gt, width_gt = data['motion_img'].shape
     dist = torch.distributions.normal.Normal(
-        loc=torch.tensor(np.zeros([batch_size, 512]), requires_grad=False),
-        scale=torch.tensor(np.ones([batch_size, 512]), requires_grad=False)
+        loc=torch.tensor(np.zeros([batch_size, 1024]), requires_grad=False),
+        scale=torch.tensor(np.ones([batch_size, 1024]), requires_grad=False)
     )
-    z_s = dist.rsample().float()
+    if cfg.fixed_z:
+        z_s = torch.load('render/fixed_z.pt')
+    else:
+        z_s = dist.rsample().float()
     fframes = data['motion_img'][:, :, 0]
     lframes = data['motion_img'][:, :, -1]
-    res = inr.decode(z_s, fframes, lframes, width, height)
-    T = width
-    fullpose_6D = res['imgs'].view(bs, height, width)[:, :330, :][0].t()  # [n_frames, n_pose_D]
-    root = res['imgs'].view(bs, height, width)[:, 330:333, :][0].t()
+    # img_cond  = torch.zeros(data['motion_img'].shape)
+    # img_cond[:, :, 0] = data['motion_img'][:, :, 0]
+    # img_cond[:, :, -1] = data['motion_img'][:, :, -1]
+    height_pred, width_pred = height_gt, cfg.width
+    res = inr.decode(z_s, fframes, lframes, width_pred, height_pred)
+    # ratio = 1.0
+    # mask = generate_mask(bs, width_gt, height_gt, ratio)
+    # res = inr(data['motion_img']*mask, fframes, lframes, width_pred, height_pred, device)
+
+    res['imgs'][:, :, 0] = fframes
+    res['imgs'][:, :, -1] = lframes
+
+    # res = inr(data['motion_img'] * mask, fframes, lframes, width - 2, height, device)
+    # Only predicts the content between the first and last frames
+    # predict_imgs = torch.zeros(data['motion_img'].shape)
+    # predict_imgs[:, :, 0] = fframes
+    # predict_imgs[:, :, -1] = lframes
+    # predict_imgs[:, :, 1:-1] = res['imgs']
+    # res['imgs'] = predict_imgs
+
+    if cfg.gt:
+        T = width_gt
+        fullpose_6D = data['motion_img'].view(bs, height_gt, width_gt)[:, :330, :][0].t()
+    else:
+        T = width_pred
+        fullpose_6D = res['imgs'].view(bs, height_pred, width_pred)[:, :330, :][0].t()  # [n_frames, n_pose_D]
+    # root = res['imgs'].view(bs, height, width)[:, 330:333, :][0].t()
     if cfg.replace_fl:
         fullpose_6D[0, :] = fframes[0, :330]
         fullpose_6D[-1, :] = lframes[0, :330]
-        root[0, :] = fframes[0, 330:333]
-        root[-1, :] = lframes[0, 330:333]
+        # root[0, :] = fframes[0, 330:333]
+        # root[-1, :] = lframes[0, 330:333]
     fullpose_rotmat = torch.zeros((T, 55, 3, 3))
     for i in range(T):
         fullpose_rotmat[i] = CRot2rotmat(torch.tensor(fullpose_6D[[i]]))
@@ -95,12 +133,14 @@ def render_img(cfg):
         'reye_pose': fullpose[:, 72:75].float(),
         'left_hand_pose': fullpose[:, 75:120].float(),
         'right_hand_pose': fullpose[:, 120:165].float(),
-        'transl': root.float(),
+        # 'transl': root.float(),
+        'transl': torch.zeros([T, 3]),
     }
 
     LossL2 = torch.nn.MSELoss(reduction='mean')
-    loss = 100 * LossL2(data['motion_img'], res['imgs'].view(bs, height, width))
-    print(loss)
+    if width_pred == width_gt and height_pred == height_gt:
+        loss = 100 * LossL2(data['motion_img'], res['imgs'].view(bs, height_pred, width_pred))
+        print(loss)
 
     sbj_mesh = os.path.join(cfg.tool_meshes, cfg.vtemp)
     sbj_vtemp = np.array(Mesh(filename=sbj_mesh).vertices)
@@ -114,7 +154,7 @@ def render_img(cfg):
                          batch_size=T)
     verts_sbj = to_cpu(sbj_m(**sbj_parms).vertices)
 
-    obj_mesh = os.path.join(cfg.tool_meshes, str(data['object_mesh']))
+    '''obj_mesh = os.path.join(cfg.tool_meshes, str(data['object_mesh']))
     obj_mesh = Mesh(filename=obj_mesh)
     obj_vtemp = np.array(obj_mesh.vertices)
     obj_m = ObjectModel(v_template=obj_vtemp,
@@ -135,7 +175,7 @@ def render_img(cfg):
         'transl': obj_transl.float().cpu().detach().numpy()
     }
     obj_parms = params2torch(obj_params)
-    verts_obj = to_cpu(obj_m(**obj_parms).vertices)
+    verts_obj = to_cpu(obj_m(**obj_parms).vertices)'''
 
     suj_id = 's1'
     if not os.path.exists(os.path.join(cfg.renderings, suj_id)):
@@ -143,9 +183,10 @@ def render_img(cfg):
 
     for i in range(T):
         s_mesh = Mesh(vertices=verts_sbj[i], faces=sbj_m.faces, vc=colors['pink'], smooth=True)
-        o_mesh = Mesh(vertices=verts_obj[i], faces=obj_mesh.faces, vc=colors['yellow'])
+        # o_mesh = Mesh(vertices=verts_obj[i], faces=obj_mesh.faces, vc=colors['yellow'])
 
-        mv.set_static_meshes([s_mesh, o_mesh])
+        # mv.set_static_meshes([s_mesh, o_mesh])
+        mv.set_static_meshes([s_mesh])
 
         color, depth = mv.viewer.render(mv.scene)
         img = cv2.cvtColor(color, cv2.COLOR_RGB2BGR)
@@ -168,6 +209,10 @@ if __name__ == '__main__':
     parser.add_argument('--inr-config', default='config/inr-gan.yml', type=str)
     parser.add_argument('--replace-fl', default=False, type=lambda arg: arg.lower() in ['true', '1'],
                         help='If to replace the first and last frames of the predicted results')
+    parser.add_argument('--gt', default=False, type=lambda arg: arg.lower() in ['true', '1'],
+                        help='If to generate the ground truth')
+    parser.add_argument('--fixed-z', default=False, type=lambda arg: arg.lower() in ['true', '1'])
+    parser.add_argument('--width', default=64, type=int)
 
     args = parser.parse_args()
     data_path = args.data_path
@@ -175,6 +220,9 @@ if __name__ == '__main__':
     renderings = args.renderings
     inr_config = args.inr_config
     replace_fl = args.replace_fl
+    gt = args.gt
+    fixed_z = args.fixed_z
+    width = args.width
 
     cfg = {
         'tool_meshes': 'toolMeshes',
@@ -186,6 +234,9 @@ if __name__ == '__main__':
         'data_path': data_path,
         'renderings': renderings,
         'replace_fl': replace_fl,
+        'gt': gt,
+        'fixed_z': fixed_z,
+        'width': width,
     }
 
     cfg = Config(**cfg)
