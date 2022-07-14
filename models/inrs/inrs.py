@@ -39,8 +39,9 @@ def generate_coords(batch_size: int, width: int, height: int) -> Tensor:
     y_coords = col.view(1, -1).repeat(height, 1)
     y_coords = y_coords.t()
 
-    coords = torch.stack([x_coords, y_coords], dim=2) # [width, height, 2]
-    coords = coords.view(-1, 2) # [width * height, 2]
+    coords = torch.stack([x_coords, y_coords], dim=2)
+    coords = coords.permute(1, 0, 2)
+    coords = coords.reshape(width * height, 2) # [width * height, 2]
     coords = coords.t().view(1, 2, width * height).repeat(batch_size, 1, 1) # [batch_size, 2, n_coords]
 
     return coords
@@ -76,8 +77,11 @@ class INRs(nn.Module):
         else:
             images_raw = self.forward(coords, inrs_weights) # [batch_size, num_channels, num_coords]
 
-        num_img_channels = 1
-        images = images_raw.view(len(inrs_weights), num_img_channels, width, height).permute(0, 1, 3, 2) # [batch_size, num_channels, img_size, img_size]
+        bs = len(inrs_weights)
+        images = images_raw.permute(0, 2, 1).reshape(bs, height, width)
+
+        # num_img_channels = 1
+        # images = images_raw.view(len(inrs_weights), num_img_channels, width, height).permute(0, 1, 3, 2) # [batch_size, num_channels, img_size, img_size]
         # images = images_raw.view(len(inrs_weights), num_img_channels, height, width) # [batch_size, num_channels, img_size, img_size]
 
         return (images, activations) if return_activations else images
@@ -186,8 +190,8 @@ class FourierINRs(INRs):
         super().__init__(config)
 
     def init_model(self):
-        # layer_sizes = [128, 256, 512, 512, 512, 256, 128]
-        layer_sizes = [128, 256, 256, 128]
+        layer_sizes = [128, 256, 512, 512, 512, 256, 128]
+        # layer_sizes = [128, 256, 256, 128]
         layers = self.create_transform(
             # self.num_fourier_feats * 2,
             2,
