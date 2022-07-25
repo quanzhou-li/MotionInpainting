@@ -152,8 +152,8 @@ class Trainer:
 
         eval_loss_dict_inr = {}
 
-        # dataset = self.ds_val
-        dataset = self.ds_train
+        dataset = self.ds_val
+        # dataset = self.ds_train
 
         with torch.no_grad():
             for it, data in enumerate(dataset):
