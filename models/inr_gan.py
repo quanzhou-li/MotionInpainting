@@ -63,7 +63,7 @@ class INRGenerator(nn.Module):
         # self.inr = FourierINRs(self.config)
         self.dist = None
 
-        self.frame_D = 330
+        self.frame_D = 342
         self.latent_D = 512
         self.dim_z = 1024
         self.fframe_enc = ResBlock(self.frame_D, self.latent_D)
