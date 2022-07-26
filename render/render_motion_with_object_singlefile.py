@@ -96,8 +96,8 @@ def render_img(cfg):
     # mask = generate_mask(bs, width_gt, height_gt, ratio)
     # res = inr(data['motion_img']*mask, fframes, lframes, width_pred, height_pred, device)
 
-    res['imgs'][:, :, 0] = fframes
-    res['imgs'][:, :, -1] = lframes
+    # res['imgs'][:, :, 0] = fframes
+    # res['imgs'][:, :, -1] = lframes
 
     # res = inr(data['motion_img'] * mask, fframes, lframes, width - 2, height, device)
     # Only predicts the content between the first and last frames
