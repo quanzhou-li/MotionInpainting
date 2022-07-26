@@ -94,7 +94,7 @@ class Trainer:
         for it, data in enumerate(self.ds_train):
             data = {k: data[k].to(self.device) for k in data.keys()}
             self.optimizer_inr.zero_grad()
-            data['motion_imgs'] = data['motion_imgs'][:, :342, :64]
+            data['motion_imgs'] = data['motion_imgs'][:, :330, :64]
             bs, height, width = data['motion_imgs'].shape
             fframes = data['motion_imgs'][:, :, 0]
             lframes = data['motion_imgs'][:, :, -1]
@@ -158,7 +158,7 @@ class Trainer:
         with torch.no_grad():
             for it, data in enumerate(dataset):
                 data = {k: data[k].to(self.device) for k in data.keys()}
-                data['motion_imgs'] = data['motion_imgs'][:, :342, :64]
+                data['motion_imgs'] = data['motion_imgs'][:, :330, :64]
                 bs, height, width = data['motion_imgs'].shape
                 fframes = data['motion_imgs'][:, :, 0]
                 lframes = data['motion_imgs'][:, :, -1]
@@ -258,18 +258,18 @@ class Trainer:
         #                                                        drec['imgs'][:, :330, :].permute(0, 2, 1))
         loss_tv_pose = self.compute_variation_Loss(drec['imgs'][:, :330, :], tv_weight)
 
-        loss_root = 100 * self.LossL2(data['motion_imgs'][:, 330:333, :], drec['imgs'][:, 330:333, :])
+        # loss_root = 100 * self.LossL2(data['motion_imgs'][:, 330:333, :], drec['imgs'][:, 330:333, :])
         # loss_root = 30 * self.LossL1(data['motion_imgs'][:, 330:333, :], drec['imgs'][:, 330:333, :])
-        loss_tv_root = self.compute_variation_Loss(drec['imgs'][:, 330:333, :], tv_weight)
+        # loss_tv_root = self.compute_variation_Loss(drec['imgs'][:, 330:333, :], tv_weight)
 
-        loss_obj_orient = 100 * self.LossL2(data['motion_imgs'][:, 333:339, :], drec['imgs'][:, 333:339, :])
+        # loss_obj_orient = 100 * self.LossL2(data['motion_imgs'][:, 333:339, :], drec['imgs'][:, 333:339, :])
         # loss_obj_orient = self.compute_geodesic_loss(data['motion_imgs'][:, 333:339, :].permute(0, 2, 1),
         #                                                    drec['imgs'][:, 333:339, :].permute(0, 2, 1))
-        loss_tv_obj_orient = self.compute_variation_Loss(drec['imgs'][:, 333:339, :], tv_weight)
+        # loss_tv_obj_orient = self.compute_variation_Loss(drec['imgs'][:, 333:339, :], tv_weight)
 
-        loss_obj_transl = 100 * self.LossL2(data['motion_imgs'][:, 339:, :], drec['imgs'][:, 339:, :])
+        # loss_obj_transl = 100 * self.LossL2(data['motion_imgs'][:, 339:, :], drec['imgs'][:, 339:, :])
         # loss_obj_transl = 30 * self.LossL1(data['motion_imgs'][:, 339:, :], drec['imgs'][:, 339:, :])
-        loss_tv_obj_transl = self.compute_variation_Loss(drec['imgs'].view(bs, height, width)[:, 339:, :], tv_weight)
+        # loss_tv_obj_transl = self.compute_variation_Loss(drec['imgs'].view(bs, height, width)[:, 339:, :], tv_weight)
 
         q_z = torch.distributions.normal.Normal(drec['mean'], drec['std'])
         p_z = torch.distributions.normal.Normal(
@@ -293,13 +293,13 @@ class Trainer:
             'loss_kl': loss_kl,
             # 'loss_firstframe': loss_firstframe,
             # 'loss_lastframe': loss_lastframe,
-            'loss_root': loss_root,
-            'loss_obj_orient': loss_obj_orient,
-            'loss_obj_transl': loss_obj_transl,
+            # 'loss_root': loss_root,
+            # 'loss_obj_orient': loss_obj_orient,
+            # 'loss_obj_transl': loss_obj_transl,
             'loss_tv_pose': loss_tv_pose,
-            'loss_tv_root': loss_tv_root,
-            'loss_tv_obj_orient': loss_tv_obj_orient,
-            'loss_tv_obj_transl': loss_tv_obj_transl,
+            # 'loss_tv_root': loss_tv_root,
+            # 'loss_tv_obj_orient': loss_tv_obj_orient,
+            # 'loss_tv_obj_transl': loss_tv_obj_transl,
             'loss_fsmooth': loss_fsmooth,
             'loss_lsmooth': loss_lsmooth,
         }

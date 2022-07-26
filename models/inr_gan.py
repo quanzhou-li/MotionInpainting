@@ -127,7 +127,8 @@ class INRGenerator(nn.Module):
         inrs_weights = self.compute_model_forward(feat)
         # inrs_weights = self.compute_model_forward(z)  # Test without first and last frames
 
-        imgs = self.forward_for_weights(inrs_weights, width, height).view(bs, height, width)
+        imgs = torch.zeros(bs, height, width).to(device)
+        imgs[:, :, 1:-1] = self.forward_for_weights(inrs_weights, width - 2, height)
         imgs[:, :, 0] = first_frame
         imgs[:, :, -1] = last_frame
         results = {'mean': dist.mean, 'std': dist.scale, 'imgs': imgs}
@@ -149,7 +150,8 @@ class INRGenerator(nn.Module):
         # inrs_weights = self.compute_model_forward(feat)
 
         bs = first_frame.shape[0]
-        imgs = self.forward_for_weights(inrs_weights, width, height).view(bs, height, width)
+        imgs = torch.zeros(bs, height, width).to(first_frame.device)
+        imgs[:, :, 1:-1] = self.forward_for_weights(inrs_weights, width - 2, height)
         imgs[:, :, 0] = first_frame
         imgs[:, :, -1] = last_frame
 
