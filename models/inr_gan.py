@@ -206,14 +206,15 @@ class INRGenerator_obj(nn.Module):
         # self.inr = FourierINRs(self.config)
         self.dist = None
 
-        self.latentD = 256
+        self.d_feat_bps = 256
         self.width = 64
-        self.d_feat_obj_computed = 512
-        self.d_feat = 128
-        self.obj_computed_enc = nn.Sequential(
-            ResBlock(3 * self.width, self.d_feat_obj_computed),
-            ResBlock(self.d_feat_obj_computed, self.d_feat_obj_computed)
+        self.d_feat_finger = 512
+        self.d_feat = 64
+        self.traj_finger_enc = nn.Sequential(
+            ResBlock(15 * self.width, self.d_feat_finger),
+            ResBlock(self.d_feat_finger, self.d_feat_finger)
         )
+        self.bps_enc = ResBlock(1024, self.d_feat_bps)
         self.obj_ori_trans_enc = ResBlock(3, self.d_feat)
         self.obj_ori_orien_enc = ResBlock(6, self.d_feat)
         self.ho_contact_enc = ResBlock(15, self.d_feat)
@@ -221,13 +222,13 @@ class INRGenerator_obj(nn.Module):
         self.init_model()
 
     def init_model(self):
-        input_dim = self.d_feat_obj_computed + 3 * self.d_feat
+        input_dim = self.d_feat_finger + self.d_feat_bps + 3 * self.d_feat
         # input_dim = self.dim_z  # Test without first and last frame vectors
         self.class_embedder = nn.Identity()
         self.size_sampler = nn.Identity()
 
         generator_hid_dim = 1024
-        generator_num_layers = 3
+        generator_num_layers = 5
 
         dims = [input_dim] \
                + [generator_hid_dim] * generator_num_layers \
@@ -238,14 +239,15 @@ class INRGenerator_obj(nn.Module):
         self.connector = nn.Linear(dims[-2], dims[-1])
         # self.connector = ResBlock(dims[-2], dims[-1])
 
-    def forward(self, obj_computed: Tensor, obj_ori_trans: Tensor, obj_ori_orien: Tensor, ho_contact: Tensor, width: int, height: int, device: str) -> Dict[str, Union[Union[Tensor, float], Any]]:
+    def forward(self, obj_computed: Tensor, start_bps: Tensor, obj_ori_trans: Tensor, obj_ori_orien: Tensor, ho_contact: Tensor, width: int, height: int, device: str) -> Dict[str, Union[Union[Tensor, float], Any]]:
         bs = obj_computed.shape[0]
-        feat_obj_computed = self.obj_computed_enc(obj_computed.reshape(bs, 3*width))
+        feat_traj_finger = self.traj_finger_enc(obj_computed.reshape(bs, 15*width))
+        feat_bps = self.bps_enc(start_bps)
         feat_ori_trans = self.obj_ori_trans_enc(obj_ori_trans)
         feat_ori_orien = self.obj_ori_orien_enc(obj_ori_orien)
         feat_ori_ho_contact = self.ho_contact_enc(ho_contact)
 
-        feat = torch.cat([feat_obj_computed, feat_ori_trans, feat_ori_orien, feat_ori_ho_contact], dim=1)
+        feat = torch.cat([feat_traj_finger, feat_bps, feat_ori_trans, feat_ori_orien, feat_ori_ho_contact], dim=1)
         inrs_weights = self.compute_model_forward(feat)
 
         imgs = torch.zeros(obj_computed.shape[0], height, width).to(device)
@@ -276,21 +278,6 @@ class INRGenerator_obj(nn.Module):
 
     def sample_noise(self, batch_size: int, correction: Config = None) -> Tensor:
         return sample_noise(self.config.hp.generator.dist, self.config.hp.generator.z_dim, batch_size, correction)
-
-    '''
-    def generate_image(self, batch_size: int, device: str, width: int, height: int, return_activations: bool = False,
-                       return_labels: bool = False) -> Tensor:
-        """
-        Generates an INR and computes it
-        """
-        inputs = self.sample_noise(batch_size).to(device)  # [batch_size, z_dim]
-        inr_params = self.compute_model_forward(inputs)
-        # Generating the images
-        generation_result = self.forward_for_weights(
-            inr_params, width, height, return_activations=return_activations)
-        images = generation_result
-        return images
-    '''
 
 
 class INRGeneratorBlock(nn.Module):

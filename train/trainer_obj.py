@@ -91,7 +91,7 @@ class Trainer:
             obj_ori_trans = data['obj_traj_computed'][:, :, 0]
             obj_ori_orien = data['obj_orient'][:, :, 0]
             ori_ho_contact = data['ho_contact'][:, :, 0]
-            drec_inr = self.inr(data['obj_traj_computed'], obj_ori_trans, obj_ori_orien, ori_ho_contact, width, 3+6+15, self.device)
+            drec_inr = self.inr(data['traj_fingers'], data['start_bps'], obj_ori_trans, obj_ori_orien, ori_ho_contact, width, 3+6+15, self.device)
 
             loss_total_inr, cur_loss_dict_inr = self.loss_inr(data, drec_inr)
 
@@ -146,7 +146,7 @@ class Trainer:
                 obj_ori_trans = data['obj_traj_computed'][:, :, 0]
                 obj_ori_orien = data['obj_orient'][:, :, 0]
                 ori_ho_contact = data['ho_contact'][:, :, 0]
-                drec_inr = self.inr(data['obj_traj_computed'], obj_ori_trans, obj_ori_orien, ori_ho_contact, width, 3+6+15, self.device)
+                drec_inr = self.inr(data['traj_fingers'], data['start_bps'], obj_ori_trans, obj_ori_orien, ori_ho_contact, width, 3+6+15, self.device)
 
                 loss_total_inr, cur_loss_dict_inr = self.loss_inr(data, drec_inr)
                 eval_loss_dict_inr = {k: eval_loss_dict_inr.get(k, 0.0) + v.item() for k, v in
@@ -176,8 +176,8 @@ class Trainer:
         return weight * tv_w / (bs * w)
 
     def loss_inr(self, data, drec):
-        # loss_transl_offset = 36 * self.LossL1(100 * data['obj_offset'], drec['imgs'][:, :3, :])
-        loss_transl_offset = 100 * self.LossL2(100 * data['obj_offset'], drec['imgs'][:, :3, :])
+        loss_transl_offset = 36 * self.LossL1(100 * data['obj_offset'], drec['imgs'][:, :3, :])
+        # loss_transl_offset = 100 * self.LossL2(100 * data['obj_offset'], drec['imgs'][:, :3, :])
 
         loss_orient = 36 * self.LossL1(data['obj_orient'], drec['imgs'][:, 3:9, :])
 
