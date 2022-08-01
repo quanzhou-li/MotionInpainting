@@ -282,7 +282,7 @@ class FourierINRs_obj(INRs):
         super().__init__(config)
 
     def init_model(self):
-        layer_sizes = [128, 256, 512, 256, 128]
+        layer_sizes = [128, 256, 512, 512, 256, 128]
         # output_dim = 1
         output_dim = 3 + 6 + 15
         layers = self.create_transform(
