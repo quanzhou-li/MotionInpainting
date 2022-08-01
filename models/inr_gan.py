@@ -239,7 +239,8 @@ class INRGenerator_obj(nn.Module):
         # self.connector = ResBlock(dims[-2], dims[-1])
 
     def forward(self, obj_computed: Tensor, obj_ori_trans: Tensor, obj_ori_orien: Tensor, ho_contact: Tensor, width: int, height: int, device: str) -> Dict[str, Union[Union[Tensor, float], Any]]:
-        feat_obj_computed = self.obj_computed_enc(obj_computed)
+        bs = obj_computed.shape[0]
+        feat_obj_computed = self.obj_computed_enc(obj_computed.reshape(bs, 3*width))
         feat_ori_trans = self.obj_ori_trans_enc(obj_ori_trans)
         feat_ori_orien = self.obj_ori_orien_enc(obj_ori_orien)
         feat_ori_ho_contact = self.ho_contact_enc(ho_contact)
