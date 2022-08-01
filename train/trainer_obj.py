@@ -176,7 +176,8 @@ class Trainer:
         return weight * tv_w / (bs * w)
 
     def loss_inr(self, data, drec):
-        loss_transl_offset = 36 * self.LossL1(100 * data['obj_offset'], drec['imgs'][:, :3, :])
+        # loss_transl_offset = 36 * self.LossL1(100 * data['obj_offset'], drec['imgs'][:, :3, :])
+        loss_transl_offset = 100 * self.LossL2(100 * data['obj_offset'], drec['imgs'][:, :3, :])
 
         loss_orient = 36 * self.LossL1(data['obj_orient'], drec['imgs'][:, 3:9, :])
 
