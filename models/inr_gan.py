@@ -8,6 +8,7 @@ from torch import Tensor
 from firelab.config import Config
 
 from models.inrs import FourierINRs, SIRENs, HierarchicalFourierINRs
+from models.inrs.inrs import FourierINRs_obj
 from models.layers import create_activation
 from utils.training_utils import sample_noise
 
@@ -156,6 +157,104 @@ class INRGenerator(nn.Module):
         imgs[:, :, -1] = last_frame
 
         return {'imgs': imgs}
+
+    def forward_for_weights(self, inrs_weights: Tensor, width: int, height: int,
+                            return_activations: bool = False) -> Tensor:
+        generation_result = self.inr.generate_image(
+            inrs_weights, width, height, return_activations=return_activations)
+
+        images = generation_result
+        return images
+
+    def compute_model_forward(self, z: Tensor) -> Tensor:
+        latents = self.mapping_network(z)
+        weights = self.connector(latents)
+
+        return weights
+
+    def get_output_matrix_size(self) -> int:
+        return self.connector.weight.numel()
+
+    def sample_noise(self, batch_size: int, correction: Config = None) -> Tensor:
+        return sample_noise(self.config.hp.generator.dist, self.config.hp.generator.z_dim, batch_size, correction)
+
+    '''
+    def generate_image(self, batch_size: int, device: str, width: int, height: int, return_activations: bool = False,
+                       return_labels: bool = False) -> Tensor:
+        """
+        Generates an INR and computes it
+        """
+        inputs = self.sample_noise(batch_size).to(device)  # [batch_size, z_dim]
+        inr_params = self.compute_model_forward(inputs)
+        # Generating the images
+        generation_result = self.forward_for_weights(
+            inr_params, width, height, return_activations=return_activations)
+        images = generation_result
+        return images
+    '''
+
+class INRGenerator_obj(nn.Module):
+    def __init__(self, config: Config):
+        super().__init__()
+
+        self.mapping_network = None
+        self.connector = None
+        self.size_sampler = None
+        self.class_embedder = None
+        self.config = config
+        self.inr = FourierINRs_obj(self.config)
+        # self.inr = FourierINRs(self.config)
+        self.dist = None
+
+        self.latentD = 256
+        self.width = 64
+        self.d_feat_obj_computed = 512
+        self.d_feat = 128
+        self.obj_computed_enc = nn.Sequential(
+            ResBlock(3 * self.width, self.d_feat_obj_computed),
+            ResBlock(self.d_feat_obj_computed, self.d_feat_obj_computed)
+        )
+        self.obj_ori_trans_enc = ResBlock(3, self.d_feat)
+        self.obj_ori_orien_enc = ResBlock(6, self.d_feat)
+        self.ho_contact_enc = ResBlock(15, self.d_feat)
+
+        self.init_model()
+
+    def init_model(self):
+        input_dim = self.d_feat_obj_computed + 3 * self.d_feat
+        # input_dim = self.dim_z  # Test without first and last frame vectors
+        self.class_embedder = nn.Identity()
+        self.size_sampler = nn.Identity()
+
+        generator_hid_dim = 1024
+        generator_num_layers = 6
+
+        dims = [input_dim] \
+               + [generator_hid_dim] * generator_num_layers \
+               + [self.inr.num_external_params]
+
+        self.mapping_network = nn.Sequential(
+            *[INRGeneratorBlock(dims[i], dims[i + 1], True, is_first_layer=(i == 0)) for i in range(len(dims) - 2)])
+        self.connector = nn.Linear(dims[-2], dims[-1])
+        # self.connector = ResBlock(dims[-2], dims[-1])
+
+    def forward(self, obj_computed: Tensor, obj_ori_trans: Tensor, obj_ori_orien: Tensor, ho_contact: Tensor, width: int, height: int, device: str) -> Dict[str, Union[Union[Tensor, float], Any]]:
+        feat_obj_computed = self.obj_computed_enc(obj_computed)
+        feat_ori_trans = self.obj_ori_trans_enc(obj_ori_trans)
+        feat_ori_orien = self.obj_ori_orien_enc(obj_ori_orien)
+        feat_ori_ho_contact = self.ho_contact_enc(ho_contact)
+
+        feat = torch.cat([feat_obj_computed, feat_ori_trans, feat_ori_orien, feat_ori_ho_contact], dim=1)
+        inrs_weights = self.compute_model_forward(feat)
+
+        imgs = torch.zeros(obj_computed.shape[0], height, width).to(device)
+        imgs[:, :, 1:] = self.forward_for_weights(inrs_weights, width - 1, height)
+        imgs[:, :3, 0] = obj_ori_trans
+        imgs[:, 3:9, 0] = obj_ori_orien
+        imgs[:, 9:, 0] = ho_contact
+        results = {'imgs': imgs}
+
+        return results
 
     def forward_for_weights(self, inrs_weights: Tensor, width: int, height: int,
                             return_activations: bool = False) -> Tensor:
