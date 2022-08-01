@@ -72,11 +72,10 @@ class INRGenerator(nn.Module):
 
         self.width, self.height = 64, self.frame_D
         self.img_enc = ResBlock(self.width * self.height, self.dim_z)
-        # self.rb1 = ResBlock(self.dim_z, 2 * self.dim_z)
-        # self.rb2 = ResBlock(2 * self.dim_z, 2 * self.dim_z)
-        # self.rb3 = ResBlock(2 * self.dim_z, self.dim_z)
         self.enc_mu = nn.Linear(self.dim_z, self.dim_z)
         self.enc_var = nn.Linear(self.dim_z, self.dim_z)
+
+        self.sigmoid = nn.Sigmoid()
 
         self.init_model()
 
@@ -132,6 +131,7 @@ class INRGenerator(nn.Module):
         imgs[:, :, 1:-1] = self.forward_for_weights(inrs_weights, width - 2, height)
         imgs[:, :, 0] = first_frame
         imgs[:, :, -1] = last_frame
+        imgs[:, -8:, :] = self.sigmoid(imgs[:, -8:, :])
         results = {'mean': dist.mean, 'std': dist.scale, 'imgs': imgs}
         # results = {'imgs': imgs}
 

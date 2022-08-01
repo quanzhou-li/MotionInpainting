@@ -61,6 +61,7 @@ class Trainer:
 
         self.LossL1 = torch.nn.L1Loss(reduction='mean')
         self.LossL2 = torch.nn.MSELoss(reduction='mean')
+        self.BCELoss = torch.nn.BCELoss()
 
         self.try_num = cfg.try_num
         self.epochs_completed = 0
@@ -258,7 +259,8 @@ class Trainer:
         #                                                        drec['imgs'][:, :330, :].permute(0, 2, 1))
         loss_tv_pose = self.compute_variation_Loss(drec['imgs'][:, :330, :], tv_weight)
 
-        loss_fg_contact = 36 * self.LossL1(data['motion_img'][:, 330:, :], drec['imgs'][:, 330:, :])
+        # loss_fg_contact = 36 * self.LossL1(data['motion_img'][:, 330:, :], drec['imgs'][:, 330:, :])
+        loss_fg_contact = 36 * self.BCELoss(drec['imgs'][:, 330:, :], data['motion_img'][:, 330:, :])
 
         # loss_root = 100 * self.LossL2(data['motion_img'][:, 330:333, :], drec['imgs'][:, 330:333, :])
         # loss_root = 30 * self.LossL1(data['motion_img'][:, 330:333, :], drec['imgs'][:, 330:333, :])
