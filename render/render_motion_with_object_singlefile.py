@@ -75,7 +75,7 @@ def render_img(cfg):
 
     data = parse_npz(cfg.data_path)
     batch_size = 1
-    data['motion_img'] = torch.FloatTensor(data['motion_img'][:330, :].reshape(1, 330, 64))
+    data['motion_img'] = torch.FloatTensor(data['motion_img'][:338, :].reshape(1, 338, 64))
     bs, height_gt, width_gt = data['motion_img'].shape
     dist = torch.distributions.normal.Normal(
         loc=torch.tensor(np.zeros([batch_size, 1024]), requires_grad=False),
@@ -125,6 +125,10 @@ def render_img(cfg):
     fullpose_rotmat = fullpose_rotmat.reshape(T, 1, 55, 9)
     fullpose = rotmat2aa(fullpose_rotmat).reshape(T, 165)
 
+    if fix_ori:
+        for i in range(1, len(fullpose)):
+            fullpose[i, :3] = fullpose[0, :3]
+
     sbj_parms = {
         'global_orient': fullpose[:, :3].float(),
         'body_pose': fullpose[:, 3:66].float(),
@@ -135,6 +139,7 @@ def render_img(cfg):
         'right_hand_pose': fullpose[:, 120:165].float(),
         # 'transl': root.float(),
         'transl': torch.zeros([T, 3]),
+        # 'transl': torch.FloatTensor(data['roots'])
     }
 
     LossL2 = torch.nn.MSELoss(reduction='mean')
@@ -159,8 +164,8 @@ def render_img(cfg):
     obj_vtemp = np.array(obj_mesh.vertices)
     obj_m = ObjectModel(v_template=obj_vtemp,
                         batch_size=T)
-    obj_transl = res['imgs'].view(bs, height, width)[:, 339:, :][0].t()
-    obj_orient_6D = res['imgs'].view(bs, height, width)[:, 333:339, :][0].t()  # [n_frames, n_pose_D]
+    obj_transl = torch.FloatTensor(data['obj_offset']) + torch.FloatTensor(data['obj_traj_computed'])
+    obj_orient_6D = torch.FloatTensor(data['obj_orient'])  # [n_frames, n_pose_D]
     if cfg.replace_fl:
         obj_orient_6D[0, :] = fframes[0, 333:339]
         obj_orient_6D[-1, :] = lframes[0, 333:339]
@@ -212,6 +217,7 @@ if __name__ == '__main__':
     parser.add_argument('--gt', default=False, type=lambda arg: arg.lower() in ['true', '1'],
                         help='If to generate the ground truth')
     parser.add_argument('--fixed-z', default=False, type=lambda arg: arg.lower() in ['true', '1'])
+    parser.add_argument('--fix-ori', default=False, type=lambda arg: arg.lower() in ['true', '1'])
     parser.add_argument('--width', default=64, type=int)
 
     args = parser.parse_args()
@@ -223,6 +229,7 @@ if __name__ == '__main__':
     gt = args.gt
     fixed_z = args.fixed_z
     width = args.width
+    fix_ori = args.fix_ori
 
     cfg = {
         'tool_meshes': 'toolMeshes',
@@ -237,6 +244,7 @@ if __name__ == '__main__':
         'gt': gt,
         'fixed_z': fixed_z,
         'width': width,
+        'fix_ori': fix_ori,
     }
 
     cfg = Config(**cfg)
