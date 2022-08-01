@@ -95,7 +95,7 @@ class Trainer:
         for it, data in enumerate(self.ds_train):
             data = {k: data[k].to(self.device) for k in data.keys()}
             self.optimizer_inr.zero_grad()
-            data['motion_img'] = data['motion_img'][:, :338, :64]
+            data['motion_img'] = data['motion_img'][:, 6:338, :64]
             bs, height, width = data['motion_img'].shape
             fframes = data['motion_img'][:, :, 0]
             lframes = data['motion_img'][:, :, -1]
@@ -159,7 +159,7 @@ class Trainer:
         with torch.no_grad():
             for it, data in enumerate(dataset):
                 data = {k: data[k].to(self.device) for k in data.keys()}
-                data['motion_img'] = data['motion_img'][:, :338, :64]
+                data['motion_img'] = data['motion_img'][:, 6:338, :64]
                 bs, height, width = data['motion_img'].shape
                 fframes = data['motion_img'][:, :, 0]
                 lframes = data['motion_img'][:, :, -1]
@@ -253,14 +253,14 @@ class Trainer:
         loss_reconstruction = 100 * self.LossL2(data['motion_img'][:, :330, 1:-1], predict_imgs[:, :330, 1:-1])
         loss_tv_pose = self.compute_variation_Loss(predict_imgs[:, :330, :], tv_weight)'''
 
-        loss_reconstruction = 36 * self.LossL1(data['motion_img'][:, :330, :], drec['imgs'][:, :330, :])
+        loss_reconstruction = 36 * self.LossL1(data['motion_img'][:, :324, :], drec['imgs'][:, :324, :])
         # loss_reconstruction = 100 * self.LossL2(data['motion_img'][:, :330, :], drec['imgs'][:, :330, :])
         # loss_reconstruction = self.compute_geodesic_loss(data['motion_img'][:, :330, :].permute(0, 2, 1),
         #                                                        drec['imgs'][:, :330, :].permute(0, 2, 1))
-        loss_tv_pose = self.compute_variation_Loss(drec['imgs'][:, :330, :], tv_weight)
+        loss_tv_pose = self.compute_variation_Loss(drec['imgs'][:, :324, :], tv_weight)
 
         # loss_fg_contact = 36 * self.LossL1(data['motion_img'][:, 330:, :], drec['imgs'][:, 330:, :])
-        loss_fg_contact = 36 * self.BCELoss(drec['imgs'][:, 330:, :], data['motion_img'][:, 330:, :])
+        loss_fg_contact = 36 * self.BCELoss(drec['imgs'][:, 324:, :], data['motion_img'][:, 324:, :])
 
         # loss_root = 100 * self.LossL2(data['motion_img'][:, 330:333, :], drec['imgs'][:, 330:333, :])
         # loss_root = 30 * self.LossL1(data['motion_img'][:, 330:333, :], drec['imgs'][:, 330:333, :])
@@ -287,8 +287,8 @@ class Trainer:
         # loss_firstframe = 10 * self.LossL1(data['motion_img'][:, :, 0], drec['imgs'][:, :, 0])
         # loss_lastframe = 10 * self.LossL1(data['motion_img'][:, :, -1], drec['imgs'][:, :, -1])
 
-        loss_fsmooth = 0.5 * self.LossL1(drec['imgs'][:, :330, 1], drec['imgs'][:, :330, 0])
-        loss_lsmooth = 0.5 * self.LossL1(drec['imgs'][:, :330, -1], drec['imgs'][:, :330, -2])
+        loss_fsmooth = 0.5 * self.LossL1(drec['imgs'][:, :324, 1], drec['imgs'][:, :324, 0])
+        loss_lsmooth = 0.5 * self.LossL1(drec['imgs'][:, :324, -1], drec['imgs'][:, :324, -2])
         # loss_fsmooth = tv_weight * torch.pow(predict_imgs[:, :330, 1] - predict_imgs[:, :330, 0], 2).sum() / bs
         # loss_lsmooth = tv_weight * torch.pow(predict_imgs[:, :330, -1] - predict_imgs[:, :330, -2], 2).sum() / bs
 
