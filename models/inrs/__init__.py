@@ -1,13 +1,11 @@
 from .inrs import (
     INRs,
     FourierINRs,
-    SIRENs,
-    HierarchicalFourierINRs,
+    FourierINRs_obj,
 )
 
 __all__ = [
     "INRs",
     "FourierINRs",
-    "SIRENs",
-    "HierarchicalFourierINRs",
+    "FourierINRs_obj",
 ]

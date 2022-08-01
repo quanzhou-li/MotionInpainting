@@ -7,7 +7,7 @@ from torch.nn import functional as F
 from torch import Tensor
 from firelab.config import Config
 
-from models.inrs import FourierINRs, SIRENs, HierarchicalFourierINRs
+from models.inrs import FourierINRs
 from models.inrs.inrs import FourierINRs_obj
 from models.layers import create_activation
 from utils.training_utils import sample_noise
