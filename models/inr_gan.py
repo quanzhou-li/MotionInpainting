@@ -252,7 +252,7 @@ class INRGenerator_obj(nn.Module):
 
         imgs = torch.zeros(obj_computed.shape[0], height, width).to(device)
         imgs[:, :, 1:] = self.forward_for_weights(inrs_weights, width - 1, height)
-        imgs[:, :3, 0] = obj_ori_trans
+        imgs[:, :3, 0] = torch.zeros(bs, 3)
         imgs[:, 3:9, 0] = obj_ori_orien
         imgs[:, 9:, 0] = ho_contact
         results = {'imgs': imgs}
