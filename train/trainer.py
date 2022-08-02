@@ -102,7 +102,8 @@ class Trainer:
             # Generate a random mask with roughly ratio parts blank
             ratio = 1.0
             mask = self.generate_mask(bs, width, height, ratio)
-            drec_inr = self.inr(data['motion_img']*mask, fframes, lframes, width, height, self.device)
+            # drec_inr = self.inr(data['motion_img']*mask, fframes, lframes, width, height, self.device)
+            drec_inr = self.inr(data['motion_img'], fframes, lframes, width, height, self.device)
             # drec_inr = self.inr(data['motion_img'] * mask, fframes, lframes, width - 2, height, self.device)
             # drec_inr = self.inr(fframes, lframes, width, height)
             '''tmp_img = torch.zeros(bs, height, width+2).to(self.device)
@@ -165,7 +166,8 @@ class Trainer:
                 lframes = data['motion_img'][:, :, -1]
                 ratio = 1.0
                 mask = self.generate_mask(bs, width, height, ratio)
-                drec_inr = self.inr(data['motion_img']*mask, fframes, lframes, width, height, self.device)
+                # drec_inr = self.inr(data['motion_img']*mask, fframes, lframes, width, height, self.device)
+                drec_inr = self.inr(data['motion_img'], fframes, lframes, width, height, self.device)
                 # drec_inr = self.inr(data['motion_img'] * mask, fframes, lframes, width - 2, height, self.device)
                 # drec_inr = self.inr(fframes, lframes, width, height)
                 '''tmp_img = torch.zeros(bs, height, width+2).to(self.device)

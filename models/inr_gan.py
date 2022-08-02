@@ -123,7 +123,7 @@ class INRGenerator(nn.Module):
         inrs_weights = self.compute_model_forward(feat)'''
 
         z = dist.rsample()
-        feat = torch.cat([z, feat_fframe, feat_lframe], dim=1)
+        feat = torch.cat([feat_fframe, z, feat_lframe], dim=1)
         inrs_weights = self.compute_model_forward(feat)
         # inrs_weights = self.compute_model_forward(z)  # Test without first and last frames
 
