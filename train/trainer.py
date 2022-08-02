@@ -290,7 +290,7 @@ class Trainer:
         # loss_lastframe = 10 * self.LossL1(data['motion_img'][:, :, -1], drec['imgs'][:, :, -1])
 
         loss_fsmooth = 36 * self.LossL1(drec['imgs'][:, :330, 0], data['motion_img'][:, :330, 0])
-        loss_lsmooth = 36 * self.LossL1(drec['imgs'][:, :330, -1], drec['motion_img'][:, :330, -1])
+        loss_lsmooth = 36 * self.LossL1(drec['imgs'][:, :330, -1], data['motion_img'][:, :330, -1])
         # loss_fsmooth = tv_weight * torch.pow(predict_imgs[:, :330, 1] - predict_imgs[:, :330, 0], 2).sum() / bs
         # loss_lsmooth = tv_weight * torch.pow(predict_imgs[:, :330, -1] - predict_imgs[:, :330, -2], 2).sum() / bs
 
