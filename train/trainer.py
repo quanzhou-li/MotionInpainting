@@ -102,8 +102,8 @@ class Trainer:
             # Generate a random mask with roughly ratio parts blank
             ratio = 1.0
             mask = self.generate_mask(bs, width, height, ratio)
-            # drec_inr = self.inr(data['motion_img']*mask, fframes, lframes, width, height, self.device)
-            drec_inr = self.inr(data['motion_img'], fframes, lframes, width, height, self.device)
+            drec_inr = self.inr(data['motion_img']*mask, fframes, lframes, width, height, self.device)
+            # drec_inr = self.inr(data['motion_img'], fframes, lframes, width, height, self.device)
             # drec_inr = self.inr(data['motion_img'] * mask, fframes, lframes, width - 2, height, self.device)
             # drec_inr = self.inr(fframes, lframes, width, height)
             '''tmp_img = torch.zeros(bs, height, width+2).to(self.device)
@@ -166,8 +166,8 @@ class Trainer:
                 lframes = data['motion_img'][:, :, -1]
                 ratio = 1.0
                 mask = self.generate_mask(bs, width, height, ratio)
-                # drec_inr = self.inr(data['motion_img']*mask, fframes, lframes, width, height, self.device)
-                drec_inr = self.inr(data['motion_img'], fframes, lframes, width, height, self.device)
+                drec_inr = self.inr(data['motion_img']*mask, fframes, lframes, width, height, self.device)
+                # drec_inr = self.inr(data['motion_img'], fframes, lframes, width, height, self.device)
                 # drec_inr = self.inr(data['motion_img'] * mask, fframes, lframes, width - 2, height, self.device)
                 # drec_inr = self.inr(fframes, lframes, width, height)
                 '''tmp_img = torch.zeros(bs, height, width+2).to(self.device)
@@ -247,7 +247,7 @@ class Trainer:
 
     def loss_inr(self, data, drec):
         bs, height, width = data['motion_img'].shape
-        tv_weight = 1e-3
+        tv_weight = 1e-2
 
         # Only predicts the content between the first and last frames
         '''predict_imgs = torch.clone(data['motion_img'])
@@ -262,7 +262,7 @@ class Trainer:
         loss_tv_pose = self.compute_variation_Loss(drec['imgs'][:, :330, :], tv_weight)
 
         # loss_fg_contact = 36 * self.LossL1(data['motion_img'][:, 330:, :], drec['imgs'][:, 330:, :])
-        loss_fg_contact = 36 * self.BCELoss(drec['imgs'][:, 330:, :], data['motion_img'][:, 330:, :])
+        loss_fg_contact = 18 * self.BCELoss(drec['imgs'][:, 330:, :], data['motion_img'][:, 330:, :])
 
         # loss_root = 100 * self.LossL2(data['motion_img'][:, 330:333, :], drec['imgs'][:, 330:333, :])
         # loss_root = 30 * self.LossL1(data['motion_img'][:, 330:333, :], drec['imgs'][:, 330:333, :])
@@ -289,8 +289,8 @@ class Trainer:
         # loss_firstframe = 10 * self.LossL1(data['motion_img'][:, :, 0], drec['imgs'][:, :, 0])
         # loss_lastframe = 10 * self.LossL1(data['motion_img'][:, :, -1], drec['imgs'][:, :, -1])
 
-        loss_fsmooth = 0.5 * self.LossL1(drec['imgs'][:, :330, 1], drec['imgs'][:, :330, 0])
-        loss_lsmooth = 0.5 * self.LossL1(drec['imgs'][:, :330, -1], drec['imgs'][:, :330, -2])
+        loss_fsmooth = 36 * self.LossL1(drec['imgs'][:, :330, 0], data['motion_img'][:, :330, 0])
+        loss_lsmooth = 36 * self.LossL1(drec['imgs'][:, :330, -1], drec['motion_img'][:, :330, -1])
         # loss_fsmooth = tv_weight * torch.pow(predict_imgs[:, :330, 1] - predict_imgs[:, :330, 0], 2).sum() / bs
         # loss_lsmooth = tv_weight * torch.pow(predict_imgs[:, :330, -1] - predict_imgs[:, :330, -2], 2).sum() / bs
 

@@ -127,10 +127,11 @@ class INRGenerator(nn.Module):
         inrs_weights = self.compute_model_forward(feat)
         # inrs_weights = self.compute_model_forward(z)  # Test without first and last frames
 
-        imgs = torch.zeros(bs, height, width).to(device)
-        imgs[:, :, 1:-1] = self.forward_for_weights(inrs_weights, width - 2, height)
-        imgs[:, :, 0] = first_frame
-        imgs[:, :, -1] = last_frame
+        # imgs = torch.zeros(bs, height, width).to(device)
+        # imgs[:, :, 1:-1] = self.forward_for_weights(inrs_weights, width - 2, height)
+        imgs = self.forward_for_weights(inrs_weights, width, height)
+        # imgs[:, :, 0] = first_frame
+        # imgs[:, :, -1] = last_frame
         imgs[:, -8:, :] = self.sigmoid(imgs[:, -8:, :])
         results = {'mean': dist.mean, 'std': dist.scale, 'imgs': imgs}
         # results = {'imgs': imgs}
